@@ -1,0 +1,10 @@
+services:
+  api:
+    # Servico minimo da API. Ative overlays opcionais com multiplos argumentos
+    # `-f`, por exemplo: docker compose -f docker-compose.yml -f core/compose/redis.yml up
+    # Nao copie o conteudo dos overlays para este arquivo.
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_PORT:-8080}:8080"
