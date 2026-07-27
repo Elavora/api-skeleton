@@ -23,6 +23,7 @@ RUN if [ "$INSTALL_REDIS" = "1" ]; then \
         apk add --no-cache --virtual .apcu-build-deps $PHPIZE_DEPS \
         && pecl install apcu \
         && docker-php-ext-enable apcu \
+        && printf '%s\n' 'apc.enable_cli=1' > /usr/local/etc/php/conf.d/apcu-cli.ini \
         && apk del .apcu-build-deps; \
     fi \
     && if [ "$INSTALL_MYSQL" = "1" ]; then \
