@@ -33,7 +33,7 @@ RUN if [ "$INSTALL_REDIS" = "1" ]; then \
         && docker-php-ext-install pdo_pgsql; \
     fi
 
-COPY composer.json ./
+COPY composer.json composer.lock ./
 
 # Instala dependencias de producao. Pacotes de desenvolvimento ficam fora da
 # imagem final para reduzir tamanho e superficie de ataque.

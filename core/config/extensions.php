@@ -2,18 +2,29 @@
 
 declare(strict_types=1);
 
-use Elavora\Api\Extension\CacheApcu\ApcuCacheExtension;
-use Elavora\Api\Extension\CacheRedis\RedisCacheExtension;
-use Elavora\Api\Extension\DatabaseMySql\MySqlExtension;
-use Elavora\Api\Extension\DatabasePostgreSql\PostgreSqlExtension;
-use Elavora\Api\Extension\LogFile\FileLogExtension;
-use Elavora\Api\Extension\LogMongoDb\MongoLogExtension;
-use Elavora\Api\Extension\LogStdout\StdoutLogExtension;
-use Elavora\Api\Extension\QueueRedis\RedisQueueExtension;
 use Elavora\Api\Framework\Contracts\Extension;
 
 /** @var list<Extension> $extensions */
 $extensions = [];
+
+/**
+ * Pacotes opcionais nao entram nas dependencias do skeleton. A resolucao
+ * dinamica evita referenciar classes ausentes durante o boot e a analise.
+ *
+ * @param array<string, mixed> $config
+ */
+$createExtension = static function (string $class, string $missingMessage, array $config): Extension {
+    if (!class_exists($class)) {
+        throw new RuntimeException($missingMessage);
+    }
+
+    $extension = new $class($config);
+    if (!$extension instanceof Extension) {
+        throw new RuntimeException(sprintf('%s deve implementar Extension.', $class));
+    }
+
+    return $extension;
+};
 
 // Pacotes opcionais nao fazem parte do framework base. Instale apenas o pacote
 // usado pelo projeto e selecione o driver correspondente no ambiente.
@@ -22,20 +33,16 @@ if ($cacheDriver !== '' && !in_array($cacheDriver, ['apcu', 'redis'], true)) {
     throw new RuntimeException('CACHE_DRIVER deve ser apcu ou redis.');
 }
 
-if ($cacheDriver === 'redis' && !class_exists(RedisCacheExtension::class)) {
-    throw new RuntimeException('Instale elavora/api-cache-redis para usar CACHE_DRIVER=redis.');
-}
-
 if ($cacheDriver === 'redis') {
-    $extensions[] = new RedisCacheExtension([
-        'host' => getenv('REDIS_HOST') ?: 'redis',
-        'port' => (int) (getenv('REDIS_PORT') ?: 6379),
-        'prefix' => getenv('CACHE_PREFIX') ?: 'api:cache:',
-    ]);
-}
-
-if ($cacheDriver === 'apcu' && !class_exists(ApcuCacheExtension::class)) {
-    throw new RuntimeException('Instale elavora/api-cache-apcu para usar CACHE_DRIVER=apcu.');
+    $extensions[] = $createExtension(
+        'Elavora\Api\Extension\CacheRedis\RedisCacheExtension',
+        'Instale elavora/api-cache-redis para usar CACHE_DRIVER=redis.',
+        [
+            'host' => getenv('REDIS_HOST') ?: 'redis',
+            'port' => (int) (getenv('REDIS_PORT') ?: 6379),
+            'prefix' => getenv('CACHE_PREFIX') ?: 'api:cache:',
+        ]
+    );
 }
 
 if ($cacheDriver === 'apcu') {
@@ -47,15 +54,24 @@ if ($cacheDriver === 'apcu') {
         $cacheConfig['ttl'] = (int) $cacheTtl;
     }
 
-    $extensions[] = new ApcuCacheExtension($cacheConfig);
+    $extensions[] = $createExtension(
+        'Elavora\Api\Extension\CacheApcu\ApcuCacheExtension',
+        'Instale elavora/api-cache-apcu para usar CACHE_DRIVER=apcu.',
+        $cacheConfig
+    );
 }
 
-if (class_exists(RedisQueueExtension::class)) {
-    $extensions[] = new RedisQueueExtension([
-        'host' => getenv('REDIS_HOST') ?: 'redis',
-        'port' => (int) (getenv('REDIS_PORT') ?: 6379),
-        'prefix' => getenv('QUEUE_PREFIX') ?: 'api:queue:',
-    ]);
+$redisQueueExtension = 'Elavora\Api\Extension\QueueRedis\RedisQueueExtension';
+if (class_exists($redisQueueExtension)) {
+    $extensions[] = $createExtension(
+        $redisQueueExtension,
+        'Instale elavora/api-queue-redis para registrar a fila Redis.',
+        [
+            'host' => getenv('REDIS_HOST') ?: 'redis',
+            'port' => (int) (getenv('REDIS_PORT') ?: 6379),
+            'prefix' => getenv('QUEUE_PREFIX') ?: 'api:queue:',
+        ]
+    );
 }
 
 $databaseDriver = getenv('DB_DRIVER') ?: '';
@@ -71,20 +87,20 @@ $databaseConfig = [
     'password' => getenv('DB_PASSWORD') ?: '',
 ];
 
-if ($databaseDriver === 'mysql' && !class_exists(MySqlExtension::class)) {
-    throw new RuntimeException('Instale elavora/api-database-mysql para usar DB_DRIVER=mysql.');
-}
-
 if ($databaseDriver === 'mysql') {
-    $extensions[] = new MySqlExtension($databaseConfig);
-}
-
-if ($databaseDriver === 'postgresql' && !class_exists(PostgreSqlExtension::class)) {
-    throw new RuntimeException('Instale elavora/api-database-postgresql para usar DB_DRIVER=postgresql.');
+    $extensions[] = $createExtension(
+        'Elavora\Api\Extension\DatabaseMySql\MySqlExtension',
+        'Instale elavora/api-database-mysql para usar DB_DRIVER=mysql.',
+        $databaseConfig
+    );
 }
 
 if ($databaseDriver === 'postgresql') {
-    $extensions[] = new PostgreSqlExtension($databaseConfig);
+    $extensions[] = $createExtension(
+        'Elavora\Api\Extension\DatabasePostgreSql\PostgreSqlExtension',
+        'Instale elavora/api-database-postgresql para usar DB_DRIVER=postgresql.',
+        $databaseConfig
+    );
 }
 
 $logDriver = getenv('LOG_DRIVER') ?: '';
@@ -92,40 +108,40 @@ if ($logDriver !== '' && !in_array($logDriver, ['stdout', 'file', 'mongodb'], tr
     throw new RuntimeException('LOG_DRIVER deve ser stdout, file ou mongodb.');
 }
 
-if ($logDriver === 'stdout' && !class_exists(StdoutLogExtension::class)) {
-    throw new RuntimeException('Instale elavora/api-log-stdout para usar LOG_DRIVER=stdout.');
-}
-
 if ($logDriver === 'stdout') {
-    $extensions[] = new StdoutLogExtension([
-        'stream' => getenv('LOG_STREAM') ?: 'stdout',
-    ]);
-}
-
-if ($logDriver === 'file' && !class_exists(FileLogExtension::class)) {
-    throw new RuntimeException('Instale elavora/api-log-file para usar LOG_DRIVER=file.');
+    $extensions[] = $createExtension(
+        'Elavora\Api\Extension\LogStdout\StdoutLogExtension',
+        'Instale elavora/api-log-stdout para usar LOG_DRIVER=stdout.',
+        [
+            'stream' => getenv('LOG_STREAM') ?: 'stdout',
+        ]
+    );
 }
 
 if ($logDriver === 'file') {
-    $extensions[] = new FileLogExtension([
-        'path' => getenv('LOG_FILE') ?: dirname(__DIR__, 2) . '/storage/logs/app.log',
-    ]);
-}
-
-if ($logDriver === 'mongodb' && !class_exists(MongoLogExtension::class)) {
-    throw new RuntimeException('Instale elavora/api-log-mongodb para usar LOG_DRIVER=mongodb.');
+    $extensions[] = $createExtension(
+        'Elavora\Api\Extension\LogFile\FileLogExtension',
+        'Instale elavora/api-log-file para usar LOG_DRIVER=file.',
+        [
+            'path' => getenv('LOG_FILE') ?: dirname(__DIR__, 2) . '/storage/logs/app.log',
+        ]
+    );
 }
 
 if ($logDriver === 'mongodb') {
-    $extensions[] = new MongoLogExtension([
-        'uri' => getenv('MONGO_LOG_URI') ?: null,
-        'host' => getenv('MONGO_LOG_HOST') ?: 'mongo',
-        'port' => getenv('MONGO_LOG_PORT') ?: '27017',
-        'database' => getenv('MONGO_LOG_DATABASE') ?: 'api_logs',
-        'collection' => getenv('MONGO_LOG_COLLECTION') ?: 'logs',
-        'username' => getenv('MONGO_LOG_USERNAME') ?: null,
-        'password' => getenv('MONGO_LOG_PASSWORD') ?: null,
-    ]);
+    $extensions[] = $createExtension(
+        'Elavora\Api\Extension\LogMongoDb\MongoLogExtension',
+        'Instale elavora/api-log-mongodb para usar LOG_DRIVER=mongodb.',
+        [
+            'uri' => getenv('MONGO_LOG_URI') ?: null,
+            'host' => getenv('MONGO_LOG_HOST') ?: 'mongo',
+            'port' => getenv('MONGO_LOG_PORT') ?: '27017',
+            'database' => getenv('MONGO_LOG_DATABASE') ?: 'api_logs',
+            'collection' => getenv('MONGO_LOG_COLLECTION') ?: 'logs',
+            'username' => getenv('MONGO_LOG_USERNAME') ?: null,
+            'password' => getenv('MONGO_LOG_PASSWORD') ?: null,
+        ]
+    );
 }
 
 return $extensions;

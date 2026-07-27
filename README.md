@@ -2,6 +2,12 @@
 
 Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
 
+## Requisitos
+
+- PHP `>=8.3`
+- `elavora/api-framework` `^1.0`
+- Docker Compose 2.24 ou mais recente para `env_file.required`
+
 ## Criação
 
 ```bash
@@ -12,9 +18,14 @@ docker compose up --build
 curl http://localhost:8080/health
 ```
 
-O projeto inicial depende somente de `elavora/api-framework`. Para criá-lo e
-executá-lo localmente, tenha Composer, Docker e Docker Compose disponíveis. A
-resposta inicial é:
+O `.env` é opcional. Quando existe, o Compose injeta suas variáveis no serviço
+`api`; quando não existe, a aplicação usa os defaults do código. Valores
+declarados em `environment` pelos overlays continuam tendo precedência.
+O arquivo permanece fora da imagem e do Git.
+
+O projeto inicial depende somente de `elavora/api-framework`. As versões
+resolvidas ficam travadas em `composer.lock`, usado também durante o build da
+imagem. A resposta inicial é:
 
 ```json
 {"status":"ok"}
@@ -132,3 +143,21 @@ composer require elavora/api-datatype-email
 
 SQLite também exige registro explícito no boot da aplicação. Logs em MongoDB
 exigem a extensão PHP `mongodb` e infraestrutura configurada pela aplicação.
+
+## Qualidade e build
+
+Use o lock versionado em instalações, CI e imagens:
+
+```bash
+composer install --no-interaction --prefer-dist
+composer validate --strict --no-check-publish
+composer lint
+composer analyse
+composer test
+composer check
+docker build -t minha-api .
+```
+
+`composer check` executa lint portátil, PHPStan nível 8 e PHPUnit. Atualize o
+`composer.lock` deliberadamente ao mudar dependências; um `composer.json`
+incompatível com o lock faz a instalação e a validação falharem.
