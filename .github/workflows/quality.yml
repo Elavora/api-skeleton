@@ -25,25 +25,84 @@ jobs:
       development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework"}'
 
   application-smoke:
-    name: Application Smoke
+    name: Application Smoke (${{ matrix.profile }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: base
+            extensions: json
+            compose_files: -f docker-compose.yml
+            expected_extension: ""
+            expected_classes: Elavora\Api\Framework\Application
+            development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework"}'
+          - profile: apcu
+            extensions: apcu
+            compose_files: -f docker-compose.yml -f core/compose/apcu.yml
+            expected_extension: apcu
+            expected_classes: Elavora\Api\Extension\CacheApcu\ApcuCacheExtension
+            development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework","elavora/api-cache-apcu":"fix/estabiliza-pacote"}'
+          - profile: redis
+            extensions: redis
+            compose_files: -f docker-compose.yml -f core/compose/redis.yml
+            expected_extension: redis
+            expected_classes: Elavora\Api\Extension\CacheRedis\RedisCacheExtension,Elavora\Api\Extension\QueueRedis\RedisQueueExtension,Elavora\Api\Extension\QueueWorker\QueueWorker
+            development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework","elavora/api-redis":"fix/estabiliza-pacote","elavora/api-cache-redis":"fix/estabiliza-pacote","elavora/api-queue-redis":"fix/estabiliza-pacote","elavora/api-queue-worker":"fix/estabiliza-pacote"}'
+          - profile: mysql
+            extensions: pdo_mysql
+            compose_files: -f docker-compose.yml -f core/compose/mysql.yml
+            expected_extension: pdo_mysql
+            expected_classes: Elavora\Api\Extension\DatabaseMySql\MySqlExtension
+            development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework","elavora/api-database-pdo":"fix/estabiliza-pacote","elavora/api-database-mysql":"fix/estabiliza-pacote"}'
+          - profile: postgresql
+            extensions: pdo_pgsql
+            compose_files: -f docker-compose.yml -f core/compose/postgresql.yml
+            expected_extension: pdo_pgsql
+            expected_classes: Elavora\Api\Extension\DatabasePostgreSql\PostgreSqlExtension
+            development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework","elavora/api-database-pdo":"fix/estabiliza-pacote","elavora/api-database-postgresql":"fix/estabiliza-pacote"}'
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Construir imagem com o lock versionado
-        run: docker build -t elavora-api-skeleton:ci .
+      - name: Configurar PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: "8.5"
+          tools: composer:2
+          coverage: none
+          extensions: ctype, filter, json, ${{ matrix.extensions }}
 
-      - name: Validar rotas HTTP
+      - name: Resolver branches coordenadas
+        env:
+          DEVELOPMENT_DEPENDENCIES: ${{ matrix.development_dependencies }}
         shell: bash
         run: |
-          docker run --detach --name elavora-api-skeleton-ci \
-            --publish 127.0.0.1::8080 \
-            elavora-api-skeleton:ci
-          trap 'docker rm --force elavora-api-skeleton-ci >/dev/null 2>&1 || true' EXIT
+          while IFS=$'\t' read -r package branch; do
+            repository="${package#elavora/}"
+            composer config "repositories.${repository}" git "https://github.com/Elavora/${repository}.git"
+            composer require --no-update "${package}:dev-${branch} as 1.0.x-dev"
+          done < <(jq -r 'to_entries[] | [.key, .value] | @tsv' <<< "$DEVELOPMENT_DEPENDENCIES")
+          composer update --no-interaction --no-progress --prefer-dist
 
-          port="$(docker port elavora-api-skeleton-ci 8080/tcp | awk -F: '{print $NF}')"
-          for attempt in {1..20}; do
+      - name: Validar perfil completo
+        env:
+          COMPOSE_FILES: ${{ matrix.compose_files }}
+          EXPECTED_CLASSES: ${{ matrix.expected_classes }}
+          EXPECTED_EXTENSION: ${{ matrix.expected_extension }}
+          PROFILE: ${{ matrix.profile }}
+        shell: bash
+        run: |
+          read -r -a compose_files <<< "$COMPOSE_FILES"
+          cleanup() {
+            docker compose "${compose_files[@]}" down --volumes --remove-orphans
+          }
+          trap cleanup EXIT
+
+          docker compose "${compose_files[@]}" up --build --detach
+
+          port="$(docker compose "${compose_files[@]}" port api 8080 | awk -F: '{print $NF}')"
+          for _ in {1..20}; do
             if health="$(curl --fail --silent --show-error "http://127.0.0.1:${port}/health")"; then
               break
             fi
@@ -52,3 +111,20 @@ jobs:
 
           test "${health:-}" = '{"status":"ok"}'
           test "$(curl --fail --silent --show-error "http://127.0.0.1:${port}/health/show")" = '{"status":"ok"}'
+
+          if [[ -n "$EXPECTED_EXTENSION" ]]; then
+            docker compose "${compose_files[@]}" exec -T \
+              -e EXPECTED_EXTENSION="$EXPECTED_EXTENSION" api \
+              php -r 'exit(extension_loaded((string) getenv("EXPECTED_EXTENSION")) ? 0 : 1);'
+          fi
+
+          if [[ "$PROFILE" == "apcu" ]]; then
+            docker compose "${compose_files[@]}" exec -T api \
+              php -r 'exit(filter_var(ini_get("apc.enable_cli"), FILTER_VALIDATE_BOOLEAN) ? 0 : 1);'
+          fi
+
+          while IFS= read -r class; do
+            docker compose "${compose_files[@]}" exec -T \
+              -e EXPECTED_CLASS="$class" api \
+              php -r 'require "vendor/autoload.php"; exit(class_exists((string) getenv("EXPECTED_CLASS")) ? 0 : 1);'
+          done < <(tr ',' '\n' <<< "$EXPECTED_CLASSES")

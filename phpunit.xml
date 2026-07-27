@@ -2,10 +2,9 @@
 <phpunit bootstrap="tests/bootstrap.php" colors="true" failOnWarning="true">
     <source>
         <include>
-            <directory>app</directory>
-            <directory>core</directory>
-            <directory>public</directory>
-            <file>worker.php</file>
+            <directory>app/Attributes</directory>
+            <directory>app/DataTypes</directory>
+            <directory>app/Http</directory>
         </include>
     </source>
     <testsuites>
