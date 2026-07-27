@@ -1,0 +1,53 @@
+name: Quality
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality
+    uses: Elavora/.github/.github/workflows/quality.yml@3b7dadedc2f7559cd3ce307904175412b1b2d595
+    with:
+      coverage_min: 0
+      development_branch: fix/estabiliza-pacote
+      development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework"}'
+
+  application-smoke:
+    name: Application Smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Construir imagem com o lock versionado
+        run: docker build -t elavora-api-skeleton:ci .
+
+      - name: Validar rotas HTTP
+        shell: bash
+        run: |
+          docker run --detach --name elavora-api-skeleton-ci \
+            --publish 127.0.0.1::8080 \
+            elavora-api-skeleton:ci
+          trap 'docker rm --force elavora-api-skeleton-ci >/dev/null 2>&1 || true' EXIT
+
+          port="$(docker port elavora-api-skeleton-ci 8080/tcp | awk -F: '{print $NF}')"
+          for attempt in {1..20}; do
+            if health="$(curl --fail --silent --show-error "http://127.0.0.1:${port}/health")"; then
+              break
+            fi
+            sleep 1
+          done
+
+          test "${health:-}" = '{"status":"ok"}'
+          test "$(curl --fail --silent --show-error "http://127.0.0.1:${port}/health/show")" = '{"status":"ok"}'
