@@ -37,8 +37,11 @@ RUN if [ "$INSTALL_REDIS" = "1" ]; then \
 COPY composer.json composer.lock ./
 
 # Instala dependencias de producao. Pacotes de desenvolvimento ficam fora da
-# imagem final para reduzir tamanho e superficie de ataque.
-RUN composer install --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader
+# imagem final para reduzir tamanho e superficie de ataque. O Git e temporario:
+# branches coordenadas ainda nao possuem artefatos dist enquanto nao ha releases.
+RUN apk add --no-cache --virtual .composer-install-deps git \
+    && composer install --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader \
+    && apk del .composer-install-deps
 
 COPY . .
 
