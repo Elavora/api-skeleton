@@ -1,6 +1,6 @@
 FROM composer:2 AS composer
 
-FROM php:8.3-cli-alpine
+FROM php:8.3-cli-alpine AS runtime
 
 # Cada overlay em core/compose habilita somente as extensoes exigidas pelo
 # projeto. A imagem base permanece pequena quando nenhum modulo opcional e usado.
@@ -10,8 +10,6 @@ ARG INSTALL_MYSQL=0
 ARG INSTALL_POSTGRESQL=0
 
 WORKDIR /app
-
-COPY --from=composer /usr/bin/composer /usr/bin/composer
 
 RUN if [ "$INSTALL_REDIS" = "1" ]; then \
         apk add --no-cache --virtual .redis-build-deps $PHPIZE_DEPS \
@@ -34,15 +32,21 @@ RUN if [ "$INSTALL_REDIS" = "1" ]; then \
         && docker-php-ext-install pdo_pgsql; \
     fi
 
+FROM runtime AS dependencies
+
+COPY --from=composer /usr/bin/composer /usr/bin/composer
 COPY composer.json composer.lock ./
 
 # Instala dependencias de producao. Pacotes de desenvolvimento ficam fora da
-# imagem final para reduzir tamanho e superficie de ataque. O Git e temporario:
-# branches coordenadas ainda nao possuem artefatos dist enquanto nao ha releases.
-RUN apk add --no-cache --virtual .composer-install-deps git \
-    && composer install --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader \
+# imagem final. O Git existe apenas neste estagio enquanto as branches
+# coordenadas ainda nao possuem artefatos dist.
+RUN apk add --no-cache --virtual .composer-install-deps git
+RUN composer install --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader \
     && apk del .composer-install-deps
 
+FROM runtime
+
+COPY --from=dependencies /app/vendor ./vendor
 COPY . .
 
 EXPOSE 8080
