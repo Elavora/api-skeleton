@@ -33,6 +33,11 @@ if ($cacheDriver !== '' && !in_array($cacheDriver, ['apcu', 'redis'], true)) {
     throw new RuntimeException('CACHE_DRIVER deve ser apcu ou redis.');
 }
 
+$redisPassword = getenv('REDIS_PASSWORD');
+$redisPassword = $redisPassword === false || $redisPassword === '' ? null : $redisPassword;
+$redisDatabase = getenv('REDIS_DATABASE');
+$redisDatabase = $redisDatabase === false || $redisDatabase === '' ? null : $redisDatabase;
+
 if ($cacheDriver === 'redis') {
     $extensions[] = $createExtension(
         'Elavora\Api\Extension\CacheRedis\RedisCacheExtension',
@@ -40,6 +45,8 @@ if ($cacheDriver === 'redis') {
         [
             'host' => getenv('REDIS_HOST') ?: 'redis',
             'port' => (int) (getenv('REDIS_PORT') ?: 6379),
+            'password' => $redisPassword,
+            'database' => $redisDatabase,
             'prefix' => getenv('CACHE_PREFIX') ?: 'api:cache:',
         ]
     );
@@ -69,6 +76,8 @@ if (class_exists($redisQueueExtension)) {
         [
             'host' => getenv('REDIS_HOST') ?: 'redis',
             'port' => (int) (getenv('REDIS_PORT') ?: 6379),
+            'password' => $redisPassword,
+            'database' => $redisDatabase,
             'prefix' => getenv('QUEUE_PREFIX') ?: 'api:queue:',
         ]
     );
