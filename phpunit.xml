@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit bootstrap="tests/bootstrap.php" colors="true" failOnWarning="true">
+    <source>
+        <include>
+            <directory>app/Attributes</directory>
+            <directory>app/DataTypes</directory>
+            <directory>app/Http</directory>
+        </include>
+    </source>
     <testsuites>
         <testsuite name="Elavora API Skeleton">
             <directory>tests</directory>

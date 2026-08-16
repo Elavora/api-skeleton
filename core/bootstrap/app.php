@@ -8,7 +8,7 @@ use Elavora\Api\Framework\Application;
 // Este arquivo monta a aplicacao. Mantenha aqui apenas configuracao de boot:
 // extensoes opcionais, rotas e outros registros globais do projeto.
 $app = Application::create(
-    debug: filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOL)
+    debug: filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN)
 );
 
 // Cada extensao adiciona uma capacidade opcional, como cache, banco ou logs.

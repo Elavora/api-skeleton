@@ -1,2 +1,5 @@
-/.env
-/vendor/
+.env
+.phpstan.cache/
+.phpunit.cache/
+coverage/
+vendor/
