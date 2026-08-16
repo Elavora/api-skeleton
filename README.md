@@ -1,5 +1,10 @@
 # Elavora API Skeleton
 
+[![Packagist Version](https://img.shields.io/packagist/v/elavora/api-skeleton.svg?style=flat-square)](https://packagist.org/packages/elavora/api-skeleton)
+[![PHP Version](https://img.shields.io/packagist/php-v/elavora/api-skeleton.svg?style=flat-square)](https://packagist.org/packages/elavora/api-skeleton)
+[![Composer Quality](https://github.com/Elavora/api-skeleton/actions/workflows/quality.yml/badge.svg?branch=main)](https://github.com/Elavora/api-skeleton/actions/workflows/quality.yml)
+[![CodeQL](https://github.com/Elavora/api-skeleton/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/Elavora/api-skeleton/actions/workflows/codeql.yml)
+[![License](https://img.shields.io/packagist/l/elavora/api-skeleton.svg?style=flat-square)](LICENSE)
 Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
 
 ## Requisitos
