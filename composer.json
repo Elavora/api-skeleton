@@ -5,7 +5,7 @@
     "license": "MIT",
     "require": {
         "php": ">=8.3",
-        "elavora/api-framework": "^1.0"
+        "elavora/api-framework": "dev-feat/shared-bootstrap as 1.0.x-dev"
     },
     "autoload": {
         "psr-4": {
@@ -36,5 +36,10 @@
         "sort-packages": true
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": [{
+        "name": "api-framework",
+        "type": "git",
+        "url": "https://github.com/Elavora/api-framework.git"
+    }]
 }

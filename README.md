@@ -5,7 +5,7 @@ Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
 ## Requisitos
 
 - PHP `>=8.3`
-- `elavora/api-framework` `^1.0`
+- `elavora/api-framework` com a API de bootstrap compartilhado (branch coordenada durante a revisao; veja o guia de migracao)
 - Docker Compose 2.24 ou mais recente para `env_file.required`
 
 ## Criação
@@ -50,7 +50,7 @@ app/
 core/
 |-- bootstrap/app.php     # Monta Application, extensões e rotas.
 |-- compose/              # Overlays opcionais do Docker Compose.
-`-- config/extensions.php # Ativa somente pacotes opcionais instalados.
+`-- config/extensions.php # Registra extensoes proprias e overrides do projeto.
 public/index.php          # Única entrada exposta pelo servidor HTTP.
 worker.php                # Entrada CLI para consumo de filas.
 tests/                    # Testes da aplicação.
@@ -161,3 +161,7 @@ docker build -t minha-api .
 `composer check` executa lint portátil, PHPStan nível 8 e PHPUnit. Atualize o
 `composer.lock` deliberadamente ao mudar dependências; um `composer.json`
 incompatível com o lock faz a instalação e a validação falharem.
+
+## Atualizacao do bootstrap
+
+A inicializacao e os defaults das extensoes oficiais pertencem ao framework e recebem atualizacoes via Composer. Veja o [guia de migracao](docs/MIGRACAO-BOOTSTRAP.md) para adaptar projetos existentes e preservar customizacoes.

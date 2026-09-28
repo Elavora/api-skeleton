@@ -21,8 +21,8 @@ jobs:
     with:
       coverage_min: 80
       coverage_path: ""
-      development_branch: fix/estabiliza-pacote
-      development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework"}'
+      development_branch: refactor/framework-bootstrap
+      development_dependencies: '{"elavora/api-framework":"feat/shared-bootstrap"}'
 
   application-smoke:
     name: Application Smoke (${{ matrix.profile }})
@@ -36,31 +36,31 @@ jobs:
             compose_files: -f docker-compose.yml
             expected_extension: ""
             expected_classes: Elavora\Api\Framework\Application
-            development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework"}'
+            development_dependencies: '{"elavora/api-framework":"feat/shared-bootstrap"}'
           - profile: apcu
             extensions: apcu
             compose_files: -f docker-compose.yml -f core/compose/apcu.yml
             expected_extension: apcu
             expected_classes: Elavora\Api\Extension\CacheApcu\ApcuCacheExtension
-            development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework","elavora/api-cache-apcu":"fix/estabiliza-pacote"}'
+            development_dependencies: '{"elavora/api-framework":"feat/shared-bootstrap","elavora/api-cache-apcu":"fix/estabiliza-pacote"}'
           - profile: redis
             extensions: redis
             compose_files: -f docker-compose.yml -f core/compose/redis.yml
             expected_extension: redis
             expected_classes: Elavora\Api\Extension\CacheRedis\RedisCacheExtension,Elavora\Api\Extension\QueueRedis\RedisQueueExtension,Elavora\Api\Extension\QueueWorker\QueueWorker
-            development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework","elavora/api-redis":"fix/estabiliza-pacote","elavora/api-cache-redis":"fix/estabiliza-pacote","elavora/api-queue-redis":"fix/estabiliza-pacote","elavora/api-queue-worker":"fix/estabiliza-pacote"}'
+            development_dependencies: '{"elavora/api-framework":"feat/shared-bootstrap","elavora/api-redis":"fix/estabiliza-pacote","elavora/api-cache-redis":"fix/estabiliza-pacote","elavora/api-queue-redis":"fix/estabiliza-pacote","elavora/api-queue-worker":"fix/estabiliza-pacote"}'
           - profile: mysql
             extensions: pdo_mysql
             compose_files: -f docker-compose.yml -f core/compose/mysql.yml
             expected_extension: pdo_mysql
             expected_classes: Elavora\Api\Extension\DatabaseMySql\MySqlExtension
-            development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework","elavora/api-database-pdo":"fix/estabiliza-pacote","elavora/api-database-mysql":"fix/estabiliza-pacote"}'
+            development_dependencies: '{"elavora/api-framework":"feat/shared-bootstrap","elavora/api-database-pdo":"fix/estabiliza-pacote","elavora/api-database-mysql":"fix/estabiliza-pacote"}'
           - profile: postgresql
             extensions: pdo_pgsql
             compose_files: -f docker-compose.yml -f core/compose/postgresql.yml
             expected_extension: pdo_pgsql
             expected_classes: Elavora\Api\Extension\DatabasePostgreSql\PostgreSqlExtension
-            development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework","elavora/api-database-pdo":"fix/estabiliza-pacote","elavora/api-database-postgresql":"fix/estabiliza-pacote"}'
+            development_dependencies: '{"elavora/api-framework":"feat/shared-bootstrap","elavora/api-database-pdo":"fix/estabiliza-pacote","elavora/api-database-postgresql":"fix/estabiliza-pacote"}'
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
