@@ -12,7 +12,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Elavora/api-framework.git",
-                "reference": "a3459691caafa084a0bd8da29ef45f32a0b7a86d"
+                "reference": "6cb2a91f8485b2bf1e10389dc987e024ea8763d8"
             },
             "require": {
                 "ext-ctype": "*",
@@ -60,7 +60,7 @@
                 "MIT"
             ],
             "description": "Nucleo HTTP modular do framework Elavora",
-            "time": "2026-09-28T18:28:32+00:00"
+            "time": "2026-09-28T19:19:06+00:00"
         }
     ],
     "packages-dev": [

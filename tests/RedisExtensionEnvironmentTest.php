@@ -28,21 +28,30 @@ final class RedisExtensionConfigurationSpy implements Extension
 
 final class RedisExtensionEnvironmentTest extends TestCase
 {
-    protected function tearDown(): void
+    /** @var array<string, string|false> */
+    private array $previousEnvironment = [];
+
+    protected function setUp(): void
     {
+        parent::setUp();
         foreach ([
-            'CACHE_DRIVER',
-            'CACHE_PREFIX',
-            'QUEUE_PREFIX',
-            'REDIS_PASSWORD',
-            'REDIS_DATABASE',
+            'CACHE_DRIVER', 'CACHE_PREFIX', 'CACHE_TTL', 'QUEUE_PREFIX',
+            'REDIS_HOST', 'REDIS_PORT', 'REDIS_PASSWORD', 'REDIS_DATABASE',
+            'DB_DRIVER', 'LOG_DRIVER',
         ] as $variable) {
+            $this->previousEnvironment[$variable] = getenv($variable);
             putenv($variable);
         }
-
-        RedisExtensionConfigurationSpy::$configs = [];
     }
 
+    protected function tearDown(): void
+    {
+        foreach ($this->previousEnvironment as $variable => $value) {
+            putenv($value === false ? $variable : $variable . '=' . $value);
+        }
+        RedisExtensionConfigurationSpy::$configs = [];
+        parent::tearDown();
+    }
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
     public function testRedisCredentialsArePropagatedToCacheAndQueue(): void
