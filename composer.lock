@@ -4,27 +4,24 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "46c12c1f01485590ec19ab42fc1cb0a1",
+    "content-hash": "be9f265ea3109de11e681e7436f6b853",
     "packages": [
         {
             "name": "elavora/api-framework",
-            "version": "v1.0.0",
+            "version": "dev-feat/shared-bootstrap",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Elavora/api-framework.git",
-                "reference": "4a809df69be61a403fbf5d3d565397a3caaeb7cf"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Elavora/api-framework/zipball/4a809df69be61a403fbf5d3d565397a3caaeb7cf",
-                "reference": "4a809df69be61a403fbf5d3d565397a3caaeb7cf",
-                "shasum": ""
+                "reference": "a3459691caafa084a0bd8da29ef45f32a0b7a86d"
             },
             "require": {
+                "ext-ctype": "*",
+                "ext-filter": "*",
                 "ext-json": "*",
-                "php": ">=8.1"
+                "php": ">=8.3"
             },
             "require-dev": {
+                "phpstan/phpstan": "^2.2",
                 "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0"
             },
             "type": "library",
@@ -38,16 +35,32 @@
                     "Elavora\\Api\\Framework\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "Elavora\\Api\\Framework\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "lint": [
+                    "php tools/lint.php"
+                ],
+                "test": [
+                    "phpunit -c phpunit.xml"
+                ],
+                "analyse": [
+                    "phpstan analyse --no-progress --memory-limit=512M"
+                ],
+                "check": [
+                    "@lint",
+                    "@test",
+                    "@analyse"
+                ]
+            },
             "license": [
                 "MIT"
             ],
             "description": "Nucleo HTTP modular do framework Elavora",
-            "support": {
-                "issues": "https://github.com/Elavora/api-framework/issues",
-                "source": "https://github.com/Elavora/api-framework/tree/v1.0.0"
-            },
-            "time": "2026-07-26T22:21:24+00:00"
+            "time": "2026-09-28T18:28:32+00:00"
         }
     ],
     "packages-dev": [
@@ -1797,9 +1810,18 @@
             "time": "2025-12-08T11:19:18+00:00"
         }
     ],
-    "aliases": [],
+    "aliases": [
+        {
+            "package": "elavora/api-framework",
+            "version": "dev-feat/shared-bootstrap",
+            "alias": "1.0.x-dev",
+            "alias_normalized": "1.0.9999999.9999999-dev"
+        }
+    ],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "elavora/api-framework": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

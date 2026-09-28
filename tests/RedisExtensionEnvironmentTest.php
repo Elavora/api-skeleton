@@ -62,7 +62,7 @@ final class RedisExtensionEnvironmentTest extends TestCase
         putenv('REDIS_PASSWORD=secret');
         putenv('REDIS_DATABASE=7');
 
-        require dirname(__DIR__) . '/core/config/extensions.php';
+        require dirname(__DIR__) . '/core/bootstrap/app.php';
 
         self::assertSame('secret', RedisExtensionConfigurationSpy::$configs['cache:test:']['password']);
         self::assertSame('7', RedisExtensionConfigurationSpy::$configs['cache:test:']['database']);
@@ -73,7 +73,7 @@ final class RedisExtensionEnvironmentTest extends TestCase
         putenv('REDIS_PASSWORD=');
         putenv('REDIS_DATABASE=');
 
-        require dirname(__DIR__) . '/core/config/extensions.php';
+        require dirname(__DIR__) . '/core/bootstrap/app.php';
 
         self::assertNull(RedisExtensionConfigurationSpy::$configs['cache:test:']['password']);
         self::assertNull(RedisExtensionConfigurationSpy::$configs['cache:test:']['database']);
