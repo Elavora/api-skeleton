@@ -1,0 +1,11 @@
+parameters:
+    level: 8
+    paths:
+        - app
+        - core
+        - public
+        - worker.php
+    excludePaths:
+        analyse:
+            - app/Worker
+            - worker.php
