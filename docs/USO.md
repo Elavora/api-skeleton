@@ -6,43 +6,73 @@ Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
 
 ```bash
 composer create-project elavora/api-skeleton minha-api
-```
-
-## Quando usar
-
-- Iniciar uma nova API baseada no framework Elavora.
-- Manter estrutura previsivel de `app/`, `core/`, `public/` e `tests`.
-- Testar extensoes opcionais por variaveis de ambiente e overlays Docker.
-
-## Exemplo rapido
-
-```bash
-composer create-project elavora/api-skeleton minha-api
 cd minha-api
 cp .env.example .env
 docker compose up --build
-curl http://localhost:8080/health
 ```
 
-## Principais pontos de entrada
+Requisitos:
 
-- Consulte `composer.json` e `README.md` para os pontos de entrada do pacote.
+- PHP `>=8.3`
+- `elavora/api-framework` `^1.0`
+- Docker Compose 2.24 ou mais recente
 
-## Dependencias de runtime
+O projeto versiona `composer.lock`. Instalacoes, CI e o Dockerfile usam
+`composer install`, portanto reproduzem as mesmas versoes.
 
-- `elavora/api-framework` `^0.3.1`
+## Ambiente do Compose
 
-## Validacao no projeto consumidor
+O servico `api` carrega `.env` por `env_file`. O arquivo e opcional: sem ele, o
+bootstrap usa seus valores padrao. O Compose ainda usa `APP_PORT` para publicar
+a porta, e os blocos `environment` dos overlays prevalecem sobre o arquivo.
 
-Depois de instalar o pacote, rode os testes da aplicacao consumidora. Para uma verificacao isolada do pacote, use container:
+Exemplo:
+
+```dotenv
+APP_DEBUG=true
+APP_PORT=8080
+LOG_DRIVER=stdout
+```
+
+Instale `elavora/api-log-stdout` antes de selecionar esse driver. O `.env`
+permanece em `.gitignore` e `.dockerignore`, e nunca e copiado para a imagem.
+
+Em automacao, `ELAVORA_ENV_FILE` pode apontar para outro arquivo:
 
 ```bash
-docker run --rm -v "${PWD}:/workspace" -w "/workspace/api-skeleton" composer:2 composer validate --strict --no-check-publish
-docker run --rm -v "${PWD}:/workspace" -w "/workspace/api-skeleton" composer:2 sh -lc "find . \\( -path ./.git -o -path ./vendor \\) -prune -o -name '*.php' -print0 | xargs -0 -r -n1 php -l"
+ELAVORA_ENV_FILE=/tmp/api-smoke.env docker compose --env-file /tmp/api-smoke.env config
 ```
 
-## Observacoes
+## Fluxo HTTP
 
-- Mantenha regras de produto fora deste pacote.
-- Prefira configurar extensoes no bootstrap da aplicacao.
-- Instale apenas os modulos que a aplicacao realmente usa.
+Com o servico iniciado:
+
+```bash
+curl --fail http://localhost:8080/health
+curl --fail http://localhost:8080/health/show
+```
+
+Ambas as rotas respondem `{"status":"ok"}`. `/health` e um alias explicito;
+`/health/show` usa a convencao do framework e exige `#[Action]` em uma action
+publica de instancia.
+
+## Qualidade
+
+```bash
+composer install --no-interaction --prefer-dist
+composer validate --strict --no-check-publish
+composer lint
+composer analyse
+composer test
+composer check
+docker build -t api-skeleton .
+```
+
+O lint cobre `app/`, `core/`, `public/`, `tests/` e `worker.php` sem depender de
+`find`, `xargs` ou Bash. O PHPStan roda no nivel 8 sem baseline. O entrypoint
+opcional de worker fica fora da analise estatica enquanto
+`elavora/api-queue-worker` nao estiver instalado, mas permanece coberto pelo
+lint.
+
+Ao mudar dependencias, atualize e revise o lock deliberadamente. Builds e
+pipelines devem continuar usando `composer install`, nunca `composer update`.
