@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "be9f265ea3109de11e681e7436f6b853",
+    "content-hash": "72768f30fa239ccdab39c3f7ca763a1e",
     "packages": [
         {
             "name": "elavora/api-framework",
-            "version": "dev-feat/shared-bootstrap",
+            "version": "dev-main",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Elavora/api-framework.git",
-                "reference": "6cb2a91f8485b2bf1e10389dc987e024ea8763d8"
+                "reference": "c4b0859148d62c8385837e3260bd9e7b8e4de19b"
             },
             "require": {
                 "ext-ctype": "*",
@@ -24,6 +24,7 @@
                 "phpstan/phpstan": "^2.2",
                 "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0"
             },
+            "default-branch": true,
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -60,7 +61,7 @@
                 "MIT"
             ],
             "description": "Nucleo HTTP modular do framework Elavora",
-            "time": "2026-09-28T19:19:06+00:00"
+            "time": "2026-09-28T19:41:31+00:00"
         }
     ],
     "packages-dev": [
@@ -1813,7 +1814,7 @@
     "aliases": [
         {
             "package": "elavora/api-framework",
-            "version": "dev-feat/shared-bootstrap",
+            "version": "dev-main",
             "alias": "1.0.x-dev",
             "alias_normalized": "1.0.9999999.9999999-dev"
         }
