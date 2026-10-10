@@ -5,7 +5,7 @@
     "license": "MIT",
     "require": {
         "php": ">=8.3",
-        "elavora/api-framework": "dev-feat/shared-bootstrap as 1.0.x-dev"
+        "elavora/api-framework": "dev-main as 1.0.x-dev"
     },
     "autoload": {
         "psr-4": {
