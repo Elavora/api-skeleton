@@ -5,7 +5,7 @@ Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
 ## Requisitos
 
 - PHP `>=8.3`
-- `elavora/api-framework` com a API de bootstrap compartilhado (branch coordenada durante a revisao; veja o guia de migracao)
+- `elavora/api-framework` `^2.0`, que traz o bootstrap compartilhado
 - Docker Compose 2.24 ou mais recente para `env_file.required`
 
 ## Criação
@@ -165,3 +165,36 @@ incompatível com o lock faz a instalação e a validação falharem.
 ## Atualizacao do bootstrap
 
 A inicializacao e os defaults das extensoes oficiais pertencem ao framework e recebem atualizacoes via Composer. Veja o [guia de migracao](docs/MIGRACAO-BOOTSTRAP.md) para adaptar projetos existentes e preservar customizacoes.
+
+## Ambiente de desenvolvimento e CI
+
+O projeto já vem com quatro peças: um Dev Container, um CI de qualidade, as regras de estilo da Elavora e o
+Dependabot.
+
+Para usar o Dev Container, instale o Docker Desktop e a extensão Dev Containers do VS Code. Abra o projeto e
+execute **Dev Containers: Reopen in Container**. Depois, no terminal, rode `composer check`.
+
+Os arquivos copiados na criação passam a ser do seu projeto. O skeleton não envia atualizações depois.
+
+O que evolui chega sozinho. Framework, regras de estilo e pipeline de qualidade chegam por PR do Dependabot. A
+imagem de desenvolvimento chega pela tag que acompanha as versões estáveis. A lista do que se atualiza sozinho e do
+que é manual está em
+[Ambiente de desenvolvimento e CI](docs/ambiente-e-ci.md#o-que-fica-no-projeto-e-como-atualizar).
+
+## Documentação
+
+Leia nesta ordem:
+
+1. [Guia de uso](docs/USO.md): instalação, ambiente do Compose, rotas e comandos de qualidade.
+2. [Ambiente de desenvolvimento e CI](docs/ambiente-e-ci.md): o que o projeto recebe, o que fica congelado, como
+   cada item se atualiza e como trocar a versão do PHP.
+
+<!-- skeleton:inicio -->
+## Só no repositório do skeleton
+
+Esta seção e os arquivos citados nela existem só no repositório `Elavora/api-skeleton`. Eles são removidos quando
+um projeto é criado com `composer create-project`.
+
+- [Manutenção do skeleton](docs/manutencao-do-skeleton.md): o que é entregue e o que é só do skeleton, como as
+  versões são publicadas, a limpeza na criação e o conteúdo exato da entrega.
+<!-- skeleton:fim -->

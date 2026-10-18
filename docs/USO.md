@@ -1,5 +1,7 @@
 # Guia de uso
 
+[README](../README.md) · Próximo: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)
+
 Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
 
 ## Instalacao
@@ -14,7 +16,7 @@ docker compose up --build
 Requisitos:
 
 - PHP `>=8.3`
-- `elavora/api-framework` `^1.0`
+- `elavora/api-framework` `^2.0`
 - Docker Compose 2.24 ou mais recente
 
 O projeto versiona `composer.lock`. Instalacoes, CI e o Dockerfile usam
@@ -76,3 +78,7 @@ lint.
 
 Ao mudar dependencias, atualize e revise o lock deliberadamente. Builds e
 pipelines devem continuar usando `composer install`, nunca `composer update`.
+
+---
+
+[README](../README.md) · Próximo: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)

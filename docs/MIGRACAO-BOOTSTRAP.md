@@ -1,18 +1,16 @@
 # Migracao para bootstrap compartilhado
 
-Esta integracao depende do PR coordenado do api-framework. Enquanto estiver em
-revisao, a dependencia aponta para a branch do framework e o lock fixa seu commit.
-Antes de publicar o Skeleton, publique uma release do framework contendo
-ApplicationBootstrap e EnvironmentExtensions, substitua a dependencia de revisao
-pela constraint estavel correspondente e regenere composer.lock em container.
-Nao presumir que a tag 1.0.0 ja contem estas classes.
+O bootstrap compartilhado (`ApplicationBootstrap` e `EnvironmentExtensions`) faz parte do
+`elavora/api-framework` a partir da versão `2.0.0`. A tag `1.0.0` do framework não tem essas classes.
+
+O skeleton exige `elavora/api-framework: ^2.0`, instalado do Packagist, sem repositório VCS nem branch.
 
 ## Projetos existentes (estrutura 1.0)
 
 1. Crie uma branch e registre em commit o estado atual, incluindo composer.lock.
 2. Compare core/bootstrap/app.php e core/config/extensions.php com suas versoes
    locais; preserve registros de extensoes proprias, rotas e middlewares.
-3. Atualize a dependencia elavora/api-framework para a release que contem esta API
+3. Atualize a dependência elavora/api-framework para ^2.0
    e execute composer update elavora/api-framework --with-dependencies em container.
 4. Use o novo core/bootstrap/app.php como referencia. Mantenha em
    core/config/extensions.php somente instancias de extensoes proprias ou
@@ -40,7 +38,8 @@ A fila Redis continua sendo ativada pela presenca do pacote, como anteriormente.
 | app/ | Projeto; preservar integralmente |
 | core/bootstrap/app.php e core/config/extensions.php | Projeto; adaptar uma vez e preservar customizacoes |
 | public/index.php e worker.php | Entradas locais; delegam aos pacotes |
-| .env, Docker, Compose e CI | Projeto; alteracoes revisadas manualmente |
+| .env, Docker e Compose | Projeto; alteracoes revisadas manualmente |
+| CI, Dev Container e regras de estilo | Projeto; veja [o que se atualiza sozinho](ambiente-e-ci.md#o-que-fica-no-projeto-e-como-atualizar) |
 
 As atualizacoes futuras do comportamento extraido chegam por Composer. Isso nao
 atualiza Docker/CI nem implementa manifesto, diagnostico, receitas ou merge de
