@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Testes do skeleton como produto (só do repositório Elavora/api-skeleton).
-    Rodar na raiz: vendor/bin/phpunit -c tests-skeleton/phpunit.xml --exclude-group docker
+    Como rodar: veja "Testes da entrega" em docs/manutencao-do-skeleton.md.
 -->
 <phpunit bootstrap="bootstrap.php" colors="true" failOnWarning="true">
     <testsuites>
