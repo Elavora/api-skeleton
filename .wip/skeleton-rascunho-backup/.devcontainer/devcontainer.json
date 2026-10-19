@@ -1,0 +1,20 @@
+{
+  "name": "Elavora API Skeleton - PHP 8.3",
+  "image": "elavora/php-dev:8.3",
+  "remoteUser": "vscode",
+  "forwardPorts": [
+    8080
+  ],
+  "postCreateCommand": "git config --global --add safe.directory \"$(pwd)\" && composer install --no-interaction --prefer-dist",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "xdebug.php-debug",
+        "bmewburn.vscode-intelephense-client"
+      ],
+      "settings": {
+        "php.validate.executablePath": "/usr/local/bin/php"
+      }
+    }
+  }
+}

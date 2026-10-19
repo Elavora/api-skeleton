@@ -1,0 +1,264 @@
+diff --git a/README.md b/README.md
+index ef40bb6..cbf176e 100644
+--- a/README.md
++++ b/README.md
+@@ -5,7 +5,7 @@ Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
+ ## Requisitos
+ 
+ - PHP `>=8.3`
+-- `elavora/api-framework` com a API de bootstrap compartilhado (branch coordenada durante a revisao; veja o guia de migracao)
++- `elavora/api-framework` `^2.0`, que traz o bootstrap compartilhado
+ - Docker Compose 2.24 ou mais recente para `env_file.required`
+ 
+ ## Criação
+@@ -50,7 +50,7 @@ app/
+ core/
+ |-- bootstrap/app.php     # Monta Application, extensões e rotas.
+ |-- compose/              # Overlays opcionais do Docker Compose.
+-`-- config/extensions.php # Registra extensoes proprias e overrides do projeto.
++`-- config/extensions.php # Registra extensões próprias e overrides do projeto.
+ public/index.php          # Única entrada exposta pelo servidor HTTP.
+ worker.php                # Entrada CLI para consumo de filas.
+ tests/                    # Testes da aplicação.
+@@ -59,7 +59,7 @@ tests/                    # Testes da aplicação.
+ As pastas vazias com `.gitkeep` existem para manter um padrão previsível entre
+ projetos. Remova apenas quando decidir oficialmente não usar uma categoria.
+ 
+-### Exemplos didaticos
++### Exemplos didáticos
+ 
+ - `app/Attributes/Permission.php` mostra como bloquear uma action antes do
+   controller. Em um projeto real, conecte o attribute ao service de autenticação.
+@@ -162,6 +162,43 @@ docker build -t minha-api .
+ `composer.lock` deliberadamente ao mudar dependências; um `composer.json`
+ incompatível com o lock faz a instalação e a validação falharem.
+ 
+-## Atualizacao do bootstrap
++## Atualização do bootstrap
+ 
+-A inicializacao e os defaults das extensoes oficiais pertencem ao framework e recebem atualizacoes via Composer. Veja o [guia de migracao](docs/MIGRACAO-BOOTSTRAP.md) para adaptar projetos existentes e preservar customizacoes.
++A inicialização e os defaults das extensões oficiais pertencem ao framework e recebem atualizações via Composer.
++`core/bootstrap/app.php` e `core/config/extensions.php` só guardam o que é do projeto: extensões próprias, rotas,
++middlewares e overrides.
++
++## Ambiente de desenvolvimento e CI
++
++O projeto já vem com um Dev Container (imagem `ghcr.io/elavora/php-dev`, com formatação ao salvar), um CI de
++qualidade que formata, roda lint e testes em todo pull request e comenta o resultado, as regras de estilo (PER-CS,
++do pacote `elavora/code-standards`) e o Dependabot. Com o Docker Desktop e a extensão Dev Containers do VS Code,
++abra o projeto e execute **Dev Containers: Reopen in Container**; depois, no terminal, `composer check`.
++
++Os arquivos copiados na criação passam a ser do seu projeto, e o skeleton não envia atualizações depois. O que
++evolui chega sozinho: framework, regras de estilo e pipeline de qualidade por PRs do Dependabot, e a imagem de
++desenvolvimento pela tag que acompanha as versões estáveis. Veja em
++[Ambiente de desenvolvimento e CI](docs/ambiente-e-ci.md#o-que-fica-no-projeto-e-como-atualizar) o que se atualiza
++sozinho e o que é manual.
++
++## Documentação
++
++Leia nesta ordem:
++
++1. [Guia de uso](docs/USO.md): instalação, ambiente do Compose, rotas e comandos de qualidade.
++2. [Ambiente de desenvolvimento e CI](docs/ambiente-e-ci.md): Dev Container, CI de qualidade, regras de estilo e
++   Dependabot que o projeto recebe, o que fica congelado no projeto, como cada item se atualiza e como trocar a
++   versão do PHP.
++
++<!-- skeleton:inicio -->
++## Só no repositório do skeleton
++
++Esta seção e os arquivos citados nela existem só no repositório `Elavora/api-skeleton` e são removidos
++automaticamente quando um projeto é criado com `composer create-project`.
++
++- [Migração para bootstrap compartilhado](docs/MIGRACAO-BOOTSTRAP.md): como adaptar um projeto criado com a
++  estrutura 1.0 do skeleton.
++- [Manutenção do skeleton](docs/manutencao-do-skeleton.md): o que é entregue e o que é só do skeleton, como as
++  versões são publicadas (labels, betas e Packagist), a limpeza na criação, o conteúdo exato da entrega e os testes
++  dela.
++<!-- skeleton:fim -->
+diff --git a/docs/MIGRACAO-BOOTSTRAP.md b/docs/MIGRACAO-BOOTSTRAP.md
+index 5471aba..b68ef8c 100644
+--- a/docs/MIGRACAO-BOOTSTRAP.md
++++ b/docs/MIGRACAO-BOOTSTRAP.md
+@@ -1,54 +1,61 @@
+-# Migracao para bootstrap compartilhado
++# Migração para bootstrap compartilhado
+ 
+-Esta integracao depende do PR coordenado do api-framework. Enquanto estiver em
+-revisao, a dependencia aponta para a branch do framework e o lock fixa seu commit.
+-Antes de publicar o Skeleton, publique uma release do framework contendo
+-ApplicationBootstrap e EnvironmentExtensions, substitua a dependencia de revisao
+-pela constraint estavel correspondente e regenere composer.lock em container.
+-Nao presumir que a tag 1.0.0 ja contem estas classes.
++[README](../README.md) · Veja também: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)
++
++Esta página existe só no repositório `Elavora/api-skeleton`. Ela é para quem tem um projeto criado com a estrutura
++1.0 do skeleton e não vai para os projetos criados a partir de agora, que já nascem com o bootstrap compartilhado.
++
++O bootstrap compartilhado (`ApplicationBootstrap` e `EnvironmentExtensions`) faz parte do
++`elavora/api-framework` a partir da versão `2.0.0`. A tag `1.0.0` do framework não tem essas classes. O skeleton
++exige `elavora/api-framework: ^2.0`, instalado do Packagist, sem repositório VCS nem branch.
+ 
+ ## Projetos existentes (estrutura 1.0)
+ 
+ 1. Crie uma branch e registre em commit o estado atual, incluindo composer.lock.
+-2. Compare core/bootstrap/app.php e core/config/extensions.php com suas versoes
+-   locais; preserve registros de extensoes proprias, rotas e middlewares.
+-3. Atualize a dependencia elavora/api-framework para a release que contem esta API
++2. Compare core/bootstrap/app.php e core/config/extensions.php com suas versões
++   locais; preserve registros de extensões próprias, rotas e middlewares.
++3. Atualize a dependência elavora/api-framework para ^2.0
+    e execute composer update elavora/api-framework --with-dependencies em container.
+-4. Use o novo core/bootstrap/app.php como referencia. Mantenha em
+-   core/config/extensions.php somente instancias de extensoes proprias ou
+-   overrides. Os modulos oficiais selecionados pelo ambiente ja sao registrados.
+-5. Mantenha registros adicionais no callback configure. Quando for necessario
+-   substituir inteiramente a configuracao oficial, use
+-   loadEnvironmentExtensions: false e forneca a lista completa de extensoes.
++4. Use o novo core/bootstrap/app.php como referência. Mantenha em
++   core/config/extensions.php somente instâncias de extensões próprias ou
++   overrides. Os módulos oficiais selecionados pelo ambiente já são registrados.
++5. Mantenha registros adicionais no callback configure. Quando for necessário
++   substituir inteiramente a configuração oficial, use
++   loadEnvironmentExtensions: false e forneça a lista completa de extensões.
+ 6. Execute composer validate --strict --no-check-publish e composer check em
+    container. Valide /health, /health/show e os perfis opcionais usados pelo produto.
+-   Para filas, valide tambem php worker.php --once --queue=bootstrap-review com api-queue-worker instalado.
++   Para filas, valide também php worker.php --once --queue=bootstrap-review com api-queue-worker instalado.
+ 
+-O framework registra primeiro os modulos oficiais, depois as extensoes locais e
+-por ultimo executa configure. Overrides devem respeitar essa ordem. basePath deve
++O framework registra primeiro os módulos oficiais, depois as extensões locais e
++por último executa configure. Overrides devem respeitar essa ordem. basePath deve
+ apontar para a raiz do projeto, para manter os logs fora de vendor/.
+ 
+ Application::create() continua funcional; projetos com bootstrap antigo podem
+ migrar gradualmente. APP_DEBUG e os defaults dos drivers permanecem iguais.
+-A fila Redis continua sendo ativada pela presenca do pacote, como anteriormente.
++A fila Redis continua sendo ativada pela presença do pacote, como anteriormente.
+ 
+ ## Arquivos e propriedade
+ 
+-| Arquivos | Responsabilidade apos criar o projeto |
++| Arquivos | Responsabilidade após criar o projeto |
+ | --- | --- |
+-| vendor/elavora/api-framework/ | Composer; nao editar diretamente |
++| vendor/elavora/api-framework/ | Composer; não editar diretamente |
+ | app/ | Projeto; preservar integralmente |
+-| core/bootstrap/app.php e core/config/extensions.php | Projeto; adaptar uma vez e preservar customizacoes |
++| core/bootstrap/app.php e core/config/extensions.php | Projeto; adaptar uma vez e preservar customizações |
+ | public/index.php e worker.php | Entradas locais; delegam aos pacotes |
+-| .env, Docker, Compose e CI | Projeto; alteracoes revisadas manualmente |
++| .env, Docker e Compose | Projeto; alterações revisadas manualmente |
++| CI, Dev Container e regras de estilo | Projeto; veja [o que se atualiza sozinho](ambiente-e-ci.md#o-que-fica-no-projeto-e-como-atualizar) |
+ 
+-As atualizacoes futuras do comportamento extraido chegam por Composer. Isso nao
+-atualiza Docker/CI nem implementa manifesto, diagnostico, receitas ou merge de
+-arquivos. A issue #25 permanece separada; esta mudanca atende a extracao da #28.
+-A documentacao contribui para #30, sem declarar uma matriz de releases ainda nao testadas.
++As atualizações futuras do comportamento extraído chegam por Composer. Isso não
++atualiza Docker/CI nem implementa manifesto, diagnóstico, receitas ou merge de
++arquivos. A issue #25 permanece separada; esta mudança atende a extração da #28.
++A documentação contribui para #30, sem declarar uma matriz de releases ainda não testadas.
+ 
+ ## Rollback
+ 
+-Reverta juntos o commit de migracao, composer.json e composer.lock. Recrie a imagem
+-com composer install usando o lock restaurado. Nao restaure arquivos app/ ou .env
+-por copia de template; preserve as alteracoes do produto.
++Reverta juntos o commit de migração, composer.json e composer.lock. Recrie a imagem
++com composer install usando o lock restaurado. Não restaure arquivos app/ ou .env
++por cópia de template; preserve as alterações do produto.
++
++---
++
++[README](../README.md) · Veja também: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)
+diff --git a/docs/USO.md b/docs/USO.md
+index 089594a..29bca38 100644
+--- a/docs/USO.md
++++ b/docs/USO.md
+@@ -1,8 +1,10 @@
+ # Guia de uso
+ 
++[README](../README.md) · Próximo: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)
++
+ Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
+ 
+-## Instalacao
++## Instalação
+ 
+ ```bash
+ composer create-project elavora/api-skeleton minha-api
+@@ -14,16 +16,16 @@ docker compose up --build
+ Requisitos:
+ 
+ - PHP `>=8.3`
+-- `elavora/api-framework` `^1.0`
++- `elavora/api-framework` `^2.0`
+ - Docker Compose 2.24 ou mais recente
+ 
+-O projeto versiona `composer.lock`. Instalacoes, CI e o Dockerfile usam
+-`composer install`, portanto reproduzem as mesmas versoes.
++O projeto versiona `composer.lock`. Instalações, CI e o Dockerfile usam
++`composer install`, portanto reproduzem as mesmas versões.
+ 
+ ## Ambiente do Compose
+ 
+-O servico `api` carrega `.env` por `env_file`. O arquivo e opcional: sem ele, o
+-bootstrap usa seus valores padrao. O Compose ainda usa `APP_PORT` para publicar
++O serviço `api` carrega `.env` por `env_file`. O arquivo é opcional: sem ele, o
++bootstrap usa seus valores padrão. O Compose ainda usa `APP_PORT` para publicar
+ a porta, e os blocos `environment` dos overlays prevalecem sobre o arquivo.
+ 
+ Exemplo:
+@@ -35,9 +37,9 @@ LOG_DRIVER=stdout
+ ```
+ 
+ Instale `elavora/api-log-stdout` antes de selecionar esse driver. O `.env`
+-permanece em `.gitignore` e `.dockerignore`, e nunca e copiado para a imagem.
++permanece em `.gitignore` e `.dockerignore`, e nunca é copiado para a imagem.
+ 
+-Em automacao, `ELAVORA_ENV_FILE` pode apontar para outro arquivo:
++Em automação, `ELAVORA_ENV_FILE` pode apontar para outro arquivo:
+ 
+ ```bash
+ ELAVORA_ENV_FILE=/tmp/api-smoke.env docker compose --env-file /tmp/api-smoke.env config
+@@ -45,16 +47,16 @@ ELAVORA_ENV_FILE=/tmp/api-smoke.env docker compose --env-file /tmp/api-smoke.env
+ 
+ ## Fluxo HTTP
+ 
+-Com o servico iniciado:
++Com o serviço iniciado:
+ 
+ ```bash
+ curl --fail http://localhost:8080/health
+ curl --fail http://localhost:8080/health/show
+ ```
+ 
+-Ambas as rotas respondem `{"status":"ok"}`. `/health` e um alias explicito;
+-`/health/show` usa a convencao do framework e exige `#[Action]` em uma action
+-publica de instancia.
++Ambas as rotas respondem `{"status":"ok"}`. `/health` é um alias explícito;
++`/health/show` usa a convenção do framework e exige `#[Action]` em uma action
++pública de instância.
+ 
+ ## Qualidade
+ 
+@@ -69,10 +71,14 @@ docker build -t api-skeleton .
+ ```
+ 
+ O lint cobre `app/`, `core/`, `public/`, `tests/` e `worker.php` sem depender de
+-`find`, `xargs` ou Bash. O PHPStan roda no nivel 8 sem baseline. O entrypoint
+-opcional de worker fica fora da analise estatica enquanto
+-`elavora/api-queue-worker` nao estiver instalado, mas permanece coberto pelo
++`find`, `xargs` ou Bash. O PHPStan roda no nível 8 sem baseline. O entrypoint
++opcional de worker fica fora da análise estática enquanto
++`elavora/api-queue-worker` não estiver instalado, mas permanece coberto pelo
+ lint.
+ 
+-Ao mudar dependencias, atualize e revise o lock deliberadamente. Builds e
++Ao mudar dependências, atualize e revise o lock deliberadamente. Builds e
+ pipelines devem continuar usando `composer install`, nunca `composer update`.
++
++---
++
++[README](../README.md) · Próximo: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)

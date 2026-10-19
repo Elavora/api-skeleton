@@ -1,0 +1,84 @@
+# Guia de uso
+
+[README](../README.md) · Próximo: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)
+
+Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
+
+## Instalação
+
+```bash
+composer create-project elavora/api-skeleton minha-api
+cd minha-api
+cp .env.example .env
+docker compose up --build
+```
+
+Requisitos:
+
+- PHP `>=8.3`
+- `elavora/api-framework` `^2.0`
+- Docker Compose 2.24 ou mais recente
+
+O projeto versiona `composer.lock`. Instalações, CI e o Dockerfile usam
+`composer install`, portanto reproduzem as mesmas versões.
+
+## Ambiente do Compose
+
+O serviço `api` carrega `.env` por `env_file`. O arquivo é opcional: sem ele, o
+bootstrap usa seus valores padrão. O Compose ainda usa `APP_PORT` para publicar
+a porta, e os blocos `environment` dos overlays prevalecem sobre o arquivo.
+
+Exemplo:
+
+```dotenv
+APP_DEBUG=true
+APP_PORT=8080
+LOG_DRIVER=stdout
+```
+
+Instale `elavora/api-log-stdout` antes de selecionar esse driver. O `.env`
+permanece em `.gitignore` e `.dockerignore`, e nunca é copiado para a imagem.
+
+Em automação, `ELAVORA_ENV_FILE` pode apontar para outro arquivo:
+
+```bash
+ELAVORA_ENV_FILE=/tmp/api-smoke.env docker compose --env-file /tmp/api-smoke.env config
+```
+
+## Fluxo HTTP
+
+Com o serviço iniciado:
+
+```bash
+curl --fail http://localhost:8080/health
+curl --fail http://localhost:8080/health/show
+```
+
+Ambas as rotas respondem `{"status":"ok"}`. `/health` é um alias explícito;
+`/health/show` usa a convenção do framework e exige `#[Action]` em uma action
+pública de instância.
+
+## Qualidade
+
+```bash
+composer install --no-interaction --prefer-dist
+composer validate --strict --no-check-publish
+composer lint
+composer analyse
+composer test
+composer check
+docker build -t api-skeleton .
+```
+
+O lint cobre `app/`, `core/`, `public/`, `tests/` e `worker.php` sem depender de
+`find`, `xargs` ou Bash. O PHPStan roda no nível 8 sem baseline. O entrypoint
+opcional de worker fica fora da análise estática enquanto
+`elavora/api-queue-worker` não estiver instalado, mas permanece coberto pelo
+lint.
+
+Ao mudar dependências, atualize e revise o lock deliberadamente. Builds e
+pipelines devem continuar usando `composer install`, nunca `composer update`.
+
+---
+
+[README](../README.md) · Próximo: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)
