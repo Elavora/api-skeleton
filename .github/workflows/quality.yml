@@ -1,128 +1,69 @@
-name: Quality
+name: Qualidade
 
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, ready_for_review]
-  merge_group:
-  workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 jobs:
   quality:
-    name: Quality
-    uses: Elavora/.github/.github/workflows/quality.yml@1e0f42a92a4aafc35522709c30bc4e83acab82f1
-    with:
-      coverage_min: 80
-      coverage_path: ""
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    uses: Elavora/.github/.github/workflows/php-quality.yml@d96e9bb606f84016dd031ad748d009d820fd5487 # 1.3.0
 
-  application-smoke:
-    name: Application Smoke (${{ matrix.profile }})
+  imagem:
+    name: Imagem Docker
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - profile: base
-            extensions: json
-            compose_files: -f docker-compose.yml
-            expected_extension: ""
-            expected_classes: Elavora\Api\Framework\Application
-            development_dependencies: '{"elavora/api-framework":"main"}'
-          - profile: apcu
-            extensions: apcu
-            compose_files: -f docker-compose.yml -f core/compose/apcu.yml
-            expected_extension: apcu
-            expected_classes: Elavora\Api\Extension\CacheApcu\ApcuCacheExtension
-            development_dependencies: '{"elavora/api-framework":"main","elavora/api-cache-apcu":"fix/estabiliza-pacote"}'
-          - profile: redis
-            extensions: redis
-            compose_files: -f docker-compose.yml -f core/compose/redis.yml
-            expected_extension: redis
-            expected_classes: Elavora\Api\Extension\CacheRedis\RedisCacheExtension,Elavora\Api\Extension\QueueRedis\RedisQueueExtension,Elavora\Api\Extension\QueueWorker\QueueWorker
-            development_dependencies: '{"elavora/api-framework":"main","elavora/api-redis":"fix/estabiliza-pacote","elavora/api-cache-redis":"fix/estabiliza-pacote","elavora/api-queue-redis":"fix/estabiliza-pacote","elavora/api-queue-worker":"fix/estabiliza-pacote"}'
-          - profile: mysql
-            extensions: pdo_mysql
-            compose_files: -f docker-compose.yml -f core/compose/mysql.yml
-            expected_extension: pdo_mysql
-            expected_classes: Elavora\Api\Extension\DatabaseMySql\MySqlExtension
-            development_dependencies: '{"elavora/api-framework":"main","elavora/api-database-pdo":"fix/estabiliza-pacote","elavora/api-database-mysql":"fix/estabiliza-pacote"}'
-          - profile: postgresql
-            extensions: pdo_pgsql
-            compose_files: -f docker-compose.yml -f core/compose/postgresql.yml
-            expected_extension: pdo_pgsql
-            expected_classes: Elavora\Api\Extension\DatabasePostgreSql\PostgreSqlExtension
-            development_dependencies: '{"elavora/api-framework":"main","elavora/api-database-pdo":"fix/estabiliza-pacote","elavora/api-database-postgresql":"fix/estabiliza-pacote"}'
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Configurar PHP
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
-          php-version: "8.5"
-          tools: composer:2
-          coverage: none
-          extensions: ctype, filter, json, ${{ matrix.extensions }}
+          persist-credentials: false
 
-      - name: Resolver branches coordenadas
-        env:
-          DEVELOPMENT_DEPENDENCIES: ${{ matrix.development_dependencies }}
+      - name: Subir a API
+        run: docker compose up --build --detach
+
+      - name: Conferir /health e /health/show
         shell: bash
         run: |
-          while IFS=$'\t' read -r package branch; do
-            repository="${package#elavora/}"
-            composer config "repositories.${repository}" git "https://github.com/Elavora/${repository}.git"
-            composer require --no-update "${package}:dev-${branch} as 1.0.x-dev"
-          done < <(jq -r 'to_entries[] | [.key, .value] | @tsv' <<< "$DEVELOPMENT_DEPENDENCIES")
-          composer update --no-interaction --no-progress --prefer-dist
+          set -euo pipefail
 
-      - name: Validar perfil completo
-        env:
-          COMPOSE_FILES: ${{ matrix.compose_files }}
-          EXPECTED_CLASSES: ${{ matrix.expected_classes }}
-          EXPECTED_EXTENSION: ${{ matrix.expected_extension }}
-          PROFILE: ${{ matrix.profile }}
-        shell: bash
-        run: |
-          read -r -a compose_files <<< "$COMPOSE_FILES"
-          cleanup() {
-            docker compose "${compose_files[@]}" down --volumes --remove-orphans
-          }
-          trap cleanup EXIT
+          port="$(docker compose port api 8080 | awk -F: '{print $NF}')"
+          if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+            echo "porta da API não encontrada: '${port}'" >&2
+            exit 1
+          fi
 
-          docker compose "${compose_files[@]}" up --build --detach
-
-          port="$(docker compose "${compose_files[@]}" port api 8080 | awk -F: '{print $NF}')"
-          for _ in {1..20}; do
+          health=''
+          for _ in $(seq 1 20); do
             if health="$(curl --fail --silent --show-error "http://127.0.0.1:${port}/health")"; then
               break
             fi
+            health=''
             sleep 1
           done
 
-          test "${health:-}" = '{"status":"ok"}'
-          test "$(curl --fail --silent --show-error "http://127.0.0.1:${port}/health/show")" = '{"status":"ok"}'
-
-          if [[ -n "$EXPECTED_EXTENSION" ]]; then
-            docker compose "${compose_files[@]}" exec -T \
-              -e EXPECTED_EXTENSION="$EXPECTED_EXTENSION" api \
-              php -r 'exit(extension_loaded((string) getenv("EXPECTED_EXTENSION")) ? 0 : 1);'
+          if [[ "$health" != '{"status":"ok"}' ]]; then
+            echo "/health respondeu '${health}'" >&2
+            docker compose logs api >&2 || true
+            exit 1
           fi
 
-          if [[ "$PROFILE" == "apcu" ]]; then
-            docker compose "${compose_files[@]}" exec -T api \
-              php -r 'exit(filter_var(ini_get("apc.enable_cli"), FILTER_VALIDATE_BOOLEAN) ? 0 : 1);'
+          show="$(curl --fail --silent --show-error "http://127.0.0.1:${port}/health/show")"
+          if [[ "$show" != '{"status":"ok"}' ]]; then
+            echo "/health/show respondeu '${show}'" >&2
+            exit 1
           fi
 
-          while IFS= read -r class; do
-            docker compose "${compose_files[@]}" exec -T \
-              -e EXPECTED_CLASS="$class" api \
-              php -r 'require "vendor/autoload.php"; exit(class_exists((string) getenv("EXPECTED_CLASS")) ? 0 : 1);'
-          done < <(tr ',' '\n' <<< "$EXPECTED_CLASSES")
+      - name: Derrubar o Compose
+        if: always()
+        run: docker compose down --volumes --remove-orphans
