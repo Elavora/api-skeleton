@@ -59,17 +59,20 @@ tests/                    # Testes da aplicação.
 As pastas vazias com `.gitkeep` existem para manter um padrão previsível entre
 projetos. Remova apenas quando decidir oficialmente não usar uma categoria.
 
-### Exemplos didaticos
+### O que já vem em `app/`
 
-- `app/Attributes/Permission.php` mostra como bloquear uma action antes do
-  controller. Em um projeto real, conecte o attribute ao service de autenticação.
-- `app/DataTypes/ProjectCode.php` mostra um DataType específico da aplicação que
-  implementa `Insertable` para persistência e `Responseable` para retorno JSON.
-- `app/Http/Controller/HealthController.php` mostra o formato mínimo de um
-  controller.
-- `app/Http/HttpRoutes.php` mostra como registrar aliases opcionais. Actions que
-  seguem `/controller/action` não precisam ser cadastradas manualmente.
-- `app/Worker/ExampleTaskHandler.php` mostra como implementar uma tarefa de fila.
+O projeto começa sem código de exemplo. Só três arquivos têm código:
+
+- `app/Http/Controller/HealthController.php` é a checagem de saúde do projeto. Ele responde `{"status":"ok"}` em
+  `/health/show`, pela convenção `/controller/action`.
+- `app/Http/HttpRoutes.php` registra o alias `/health` para o mesmo controller. É o endereço que o CI e os health
+  checks de infraestrutura usam.
+- `app/Worker/tasks.php` devolve o registro de tarefas da fila, que começa vazio. Registre nele as suas tarefas.
+
+Não apague o `HealthController` nem a rota `/health`. O job `Imagem Docker` do CI sobe a API e confere essas duas
+rotas.
+
+As outras pastas de `app/` começam vazias, só com `.gitkeep`.
 
 ## Extensões opcionais
 

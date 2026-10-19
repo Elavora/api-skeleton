@@ -58,6 +58,22 @@ Ambas as rotas respondem `{"status":"ok"}`. `/health` é um alias explícito;
 `/health/show` usa a convenção do framework e exige `#[Action]` em uma action
 pública de instância.
 
+Essas duas rotas são a checagem de saúde do projeto, não um exemplo. O job `Imagem Docker` do CI depende delas.
+Mantenha o `HealthController` e o alias `/health` em `app/Http/HttpRoutes.php`.
+
+## Tarefas de fila
+
+O arquivo `app/Worker/tasks.php` devolve um `TaskRegistry` vazio. Para cada tarefa, crie um handler em `app/Worker/`
+que implemente `TaskHandler` e registre-o com `add`:
+
+```php
+return (new TaskRegistry())
+    ->add('email.send', new SendEmailHandler());
+```
+
+O nome (`email.send`) é o que fica gravado na fila. Prefira nomes estáveis e fáceis de pesquisar. O worker
+(`php worker.php`) exige o pacote `elavora/api-queue-worker`.
+
 ## Qualidade
 
 ```bash
