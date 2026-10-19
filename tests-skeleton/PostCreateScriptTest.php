@@ -139,7 +139,7 @@ final class PostCreateScriptTest extends TestCase
         self::assertStringNotContainsString('skeleton:', $attributesAfter);
         self::assertSame(
             Skeleton::withoutMarkedBlock($attributes, Skeleton::ATTRIBUTES_START, Skeleton::ATTRIBUTES_END),
-            $attributesAfter
+            $attributesAfter,
         );
 
         self::assertIsObject($composer);
@@ -147,7 +147,7 @@ final class PostCreateScriptTest extends TestCase
         unset($composer->scripts->{'post-create-project-cmd'});
         self::assertSame(
             json_encode($composer, self::JSON_FLAGS) . "\n",
-            (string) file_get_contents($root . '/composer.json')
+            (string) file_get_contents($root . '/composer.json'),
         );
 
         $after = Skeleton::snapshot($root);
@@ -210,7 +210,7 @@ final class PostCreateScriptTest extends TestCase
         self::assertSame(0, $result['code'], $result['stderr']);
         self::assertSame(
             "## Documentação\n\n- [Guia de uso](docs/USO.md)\n\n",
-            (string) file_get_contents($root . '/README.md')
+            (string) file_get_contents($root . '/README.md'),
         );
         self::assertSame("* text=auto eol=lf\n\n", (string) file_get_contents($root . '/.gitattributes'));
     }
@@ -326,7 +326,7 @@ final class PostCreateScriptTest extends TestCase
         self::assertSame(0, $result['code'], $result['stderr']);
         self::assertSame(
             json_encode(['name' => 'acme/api', 'license' => 'MIT'], self::JSON_FLAGS) . "\n",
-            (string) file_get_contents($root . '/composer.json')
+            (string) file_get_contents($root . '/composer.json'),
         );
     }
 

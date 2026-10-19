@@ -37,7 +37,7 @@ final class QualityWorkflowTest extends TestCase
         self::assertCount(1, $uses);
         self::assertTrue(
             Skeleton::isElavoraCallerLine($uses[0], 'php-quality.yml'),
-            "uses fora do formato SHA + comentário de versão: {$uses[0]}"
+            "uses fora do formato SHA + comentário de versão: {$uses[0]}",
         );
         self::assertMatchesRegularExpression('~^\s+contents:\s*write\s*$~m', $job);
         self::assertMatchesRegularExpression('~^\s+pull-requests:\s*write\s*$~m', $job);
@@ -70,14 +70,14 @@ final class QualityWorkflowTest extends TestCase
         $steps = preg_split('~^      - ~m', $job) ?: [];
         $down = array_values(array_filter(
             $steps,
-            static fn (string $step): bool => str_contains($step, 'docker compose down --volumes --remove-orphans')
+            static fn(string $step): bool => str_contains($step, 'docker compose down --volumes --remove-orphans'),
         ));
 
         self::assertCount(1, $down, 'um passo derruba o Compose');
         self::assertMatchesRegularExpression(
             '~^\s*(?:-\s+)?if:\s*(?:\$\{\{\s*)?always\(\)(?:\s*\}\})?\s*$~m',
             $down[0],
-            'o passo de down roda sempre (if: always())'
+            'o passo de down roda sempre (if: always())',
         );
         self::assertSame($down[0], end($steps), 'o down é o último passo');
     }
@@ -88,8 +88,8 @@ final class QualityWorkflowTest extends TestCase
 
         self::assertNotEmpty($uses);
         self::assertContains(true, array_map(
-            static fn (string $value): bool => str_starts_with($value, 'actions/checkout@'),
-            $uses
+            static fn(string $value): bool => str_starts_with($value, 'actions/checkout@'),
+            $uses,
         ), 'o job imagem faz checkout');
         foreach ($uses as $value) {
             if (str_starts_with($value, 'Elavora/.github/')) {

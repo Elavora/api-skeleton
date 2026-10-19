@@ -24,7 +24,7 @@ $tasks = require __DIR__ . '/app/Worker/tasks.php';
 
 $command = new QueueWorkerCommand(new QueueWorker(
     queue: $app->container()->get(Queue::class),
-    tasks: $tasks
+    tasks: $tasks,
 ));
 
 exit($command->run($argv));

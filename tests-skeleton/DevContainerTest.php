@@ -30,7 +30,7 @@ final class DevContainerTest extends TestCase
         self::assertSame([8080], $config['forwardPorts'] ?? null);
         self::assertSame(
             'git config --global --add safe.directory "$(pwd)" && composer install --no-interaction --prefer-dist',
-            $config['postCreateCommand'] ?? null
+            $config['postCreateCommand'] ?? null,
         );
     }
 
@@ -46,7 +46,7 @@ final class DevContainerTest extends TestCase
                 'junstyle.php-cs-fixer',
                 'EditorConfig.EditorConfig',
             ],
-            $extensions
+            $extensions,
         );
     }
 
@@ -67,7 +67,7 @@ final class DevContainerTest extends TestCase
                     'editor.formatOnSave' => true,
                 ],
             ],
-            $settings
+            $settings,
         );
         self::assertFalse($settings['php-cs-fixer.onsave']);
         self::assertTrue($settings['[php]']['editor.formatOnSave']);

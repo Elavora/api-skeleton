@@ -16,7 +16,7 @@ final class SkeletonOnlyListTest extends TestCase
     /** @param list<string> $paths @return list<string> */
     private static function normalize(array $paths): array
     {
-        return array_map(static fn (string $p): string => rtrim(ltrim($p, '/'), '/'), $paths);
+        return array_map(static fn(string $p): string => rtrim(ltrim($p, '/'), '/'), $paths);
     }
 
     /** @return list<string> */

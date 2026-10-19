@@ -30,7 +30,7 @@ final class DeliveredReferencesTest extends TestCase
                 }
                 self::assertTrue(
                     Skeleton::isValidImageReference($reference),
-                    "{$file}: referência inválida à imagem de desenvolvimento: {$reference}"
+                    "{$file}: referência inválida à imagem de desenvolvimento: {$reference}",
                 );
             }
         }
@@ -65,7 +65,7 @@ final class DeliveredReferencesTest extends TestCase
         self::assertSame(1, count(array_keys($lines, Skeleton::README_END, true)));
         self::assertLessThan(
             array_search(Skeleton::README_END, $lines, true),
-            array_search(Skeleton::README_START, $lines, true)
+            array_search(Skeleton::README_START, $lines, true),
         );
     }
 }

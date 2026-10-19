@@ -21,9 +21,7 @@ use InvalidArgumentException;
  */
 final readonly class ProjectCode implements DataType, Insertable, Responseable
 {
-    private function __construct(private string $value)
-    {
-    }
+    private function __construct(private string $value) {}
 
     /**
      * Cria um codigo validado e normalizado.

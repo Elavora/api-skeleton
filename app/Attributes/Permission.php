@@ -28,9 +28,7 @@ final class Permission implements BeforeRequestAttribute
     /**
      * @param string $required Permissao exigida para executar a action.
      */
-    public function __construct(private readonly string $required)
-    {
-    }
+    public function __construct(private readonly string $required) {}
 
     /**
      * Interrompe a request com HTTP 403 quando a permissao nao foi concedida.
@@ -46,7 +44,7 @@ final class Permission implements BeforeRequestAttribute
 
         return Response::json(
             payload: ['message' => 'Permissao insuficiente.'],
-            status: 403
+            status: 403,
         );
     }
 

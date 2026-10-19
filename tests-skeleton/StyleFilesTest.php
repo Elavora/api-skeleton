@@ -41,7 +41,7 @@ final class StyleFilesTest extends TestCase
         self::assertGreaterThan($start + 1, $end, 'o bloco não é vazio');
 
         $outside = array_merge(array_slice($trimmed, 0, $start), array_slice($trimmed, $end + 1));
-        self::assertSame([], array_values(array_filter($outside, static fn (string $l): bool => $l !== '')));
+        self::assertSame([], array_values(array_filter($outside, static fn(string $l): bool => $l !== '')));
     }
 
     public function testGitignoreHasCentralScriptsFolderAndPersonalOverride(): void
@@ -63,7 +63,7 @@ final class StyleFilesTest extends TestCase
             $value = trim((string) $directory);
             self::assertTrue(
                 $value === 'app' || str_starts_with($value, 'app/'),
-                "<directory> de <source> deve ser app ou app/...: {$value}"
+                "<directory> de <source> deve ser app ou app/...: {$value}",
             );
         }
     }

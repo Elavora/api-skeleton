@@ -53,7 +53,7 @@ final class WorkflowsTest extends TestCase
     {
         self::assertSame(
             ['quality.yml', 'skeleton-release.yml', 'skeleton-sync-labels.yml', 'skeleton-tests.yml'],
-            self::allWorkflows()
+            self::allWorkflows(),
         );
     }
 
@@ -112,7 +112,7 @@ final class WorkflowsTest extends TestCase
             self::assertMatchesRegularExpression(
                 '~^    if:.*github\.repository == \'Elavora/api-skeleton\'~m',
                 $block,
-                "{$name}: job {$job} sem a condição de repositório"
+                "{$name}: job {$job} sem a condição de repositório",
             );
         }
     }
@@ -160,7 +160,7 @@ final class WorkflowsTest extends TestCase
         self::assertMatchesRegularExpression('~^\s+id-token:\s*write\s*$~m', $job);
         self::assertMatchesRegularExpression(
             '~^    if:\s*(?:\$\{\{\s*)?github\.event\.pull_request\.merged == true && github\.repository == \'Elavora/api-skeleton\'(?:\s*\}\})?\s*$~m',
-            $job
+            $job,
         );
         self::assertNull(Skeleton::scalar($job, 'packagist'), 'packagist fica no padrão (true)');
         $uses = Skeleton::usesLines($job);
@@ -169,7 +169,7 @@ final class WorkflowsTest extends TestCase
         self::assertSame('elavora/api-skeleton', Skeleton::scalar($job, 'package_name'));
         self::assertMatchesRegularExpression(
             '~^\s+PACKAGIST_WEBHOOK_URL:\s*\$\{\{\s*secrets\.PACKAGIST_WEBHOOK_URL\s*\}\}\s*$~m',
-            $job
+            $job,
         );
         self::assertStringNotContainsString('secrets: inherit', $yaml);
     }

@@ -185,8 +185,8 @@ final class Skeleton
                 $inner = trim(substr($value, 1, -1));
 
                 return $inner === '' ? [] : array_map(
-                    static fn (string $item): string => self::unquote(trim($item)),
-                    explode(',', $inner)
+                    static fn(string $item): string => self::unquote(trim($item)),
+                    explode(',', $inner),
                 );
             }
             $items = [];
@@ -226,7 +226,7 @@ final class Skeleton
         $ignoredDirs = ['vendor', '.git', 'node_modules', 'coverage', '.phpunit.cache', '.phpstan.cache', '.elavora'];
         $files = [];
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS)
+            new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS),
         );
         foreach ($iterator as $file) {
             if (!$file->isFile()) {
@@ -320,7 +320,7 @@ final class Skeleton
         $root = self::root();
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::SELF_FIRST
+            RecursiveIteratorIterator::SELF_FIRST,
         );
         foreach ($iterator as $file) {
             $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
@@ -354,7 +354,7 @@ final class Skeleton
             return $result;
         }
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS)
+            new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
         );
         foreach ($iterator as $file) {
             if ($file->isFile()) {
@@ -382,7 +382,7 @@ final class Skeleton
             $command,
             [0 => ['file', '/dev/null', 'r'], 1 => ['file', $out, 'w'], 2 => ['file', $err, 'w']],
             $pipes,
-            $cwd
+            $cwd,
         );
         if (!is_resource($process)) {
             throw new RuntimeException('Falha ao executar ' . implode(' ', $command));
