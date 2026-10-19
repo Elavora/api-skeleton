@@ -286,16 +286,16 @@ final class PostCreateScriptTest extends TestCase
     {
         $original = <<<'JSON'
             {
-              "name": "acme/api",
-              "description": "Projeto com acentuação e barra/normal",
-              "require": {"php": ">=8.3"},
-              "scripts": {
-                "lint": "@php tools/lint.php",
-                "post-create-project-cmd": ["@php tools/skeleton-post-create.php"],
-                "test": "@php vendor/bin/phpunit -c phpunit.xml"
-              },
-              "config": {"allow-plugins": {}, "sort-packages": true},
-              "minimum-stability": "stable"
+                "name": "acme/api",
+                "description": "Projeto com acentuação e barra/normal",
+                "require": {"php": ">=8.3"},
+                "scripts": {
+                    "lint": "@php tools/lint.php",
+                    "post-create-project-cmd": ["@php tools/skeleton-post-create.php"],
+                    "test": "@php vendor/bin/phpunit -c phpunit.xml"
+                },
+                "config": {"allow-plugins": {}, "sort-packages": true},
+                "minimum-stability": "stable"
             }
             JSON;
         $root = $this->fixture(['composer.json' => $original] + self::defaultFiles());

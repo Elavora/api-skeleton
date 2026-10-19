@@ -117,17 +117,28 @@ final class WorkflowsTest extends TestCase
         }
     }
 
-    #[DataProvider('skeletonWorkflows')]
+    /** @return iterable<string, array{string}> workflows só do skeleton que chamam o Elavora/.github */
+    public static function centralCallerWorkflows(): iterable
+    {
+        foreach (['skeleton-release.yml', 'skeleton-sync-labels.yml'] as $name) {
+            yield $name => [$name];
+        }
+    }
+
+    #[DataProvider('centralCallerWorkflows')]
     public function testCentralCallersHaveIdTokenWrite(string $name): void
     {
         $yaml = self::workflow($name);
+        $callers = 0;
         foreach (Skeleton::jobNames($yaml) as $job) {
             $block = (string) Skeleton::jobBlock($yaml, $job);
             if (!str_contains($block, 'Elavora/.github/')) {
                 continue;
             }
+            $callers++;
             self::assertMatchesRegularExpression('~^\s+id-token:\s*write\s*$~m', $block, "{$name}: {$job}");
         }
+        self::assertGreaterThan(0, $callers, "{$name} chama o Elavora/.github");
     }
 
     public function testReleaseWorkflow(): void

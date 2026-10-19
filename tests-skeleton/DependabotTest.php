@@ -14,11 +14,14 @@ final class DependabotTest extends TestCase
     private static function items(): array
     {
         $yaml = str_replace("\r\n", "\n", Skeleton::read('.github/dependabot.yml'));
-        $parts = preg_split('~^(?=\s*-\s+package-ecosystem:)~m', $yaml) ?: [];
+        $parts = preg_split('~^(?=[ \t]*-[ \t]+package-ecosystem:)~m', $yaml) ?: [];
         array_shift($parts);
         $items = [];
         foreach ($parts as $part) {
-            $ecosystem = (string) Skeleton::scalar($part, 'package-ecosystem');
+            $ecosystem = Skeleton::scalar($part, 'package-ecosystem');
+            if ($ecosystem === null || $ecosystem === '') {
+                continue; // linha em branco ou resto sem item
+            }
             $items[$ecosystem] = $part;
         }
 
