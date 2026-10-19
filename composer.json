@@ -36,6 +36,9 @@
         ],
         "post-update-cmd": [
             "Elavora\\CodeStandards\\Composer::sync"
+        ],
+        "post-create-project-cmd": [
+            "@php tools/skeleton-post-create.php"
         ]
     },
     "config": {
