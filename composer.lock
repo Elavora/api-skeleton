@@ -4,15 +4,21 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "72768f30fa239ccdab39c3f7ca763a1e",
+    "content-hash": "e338dc8630e78afa90b257cbc11702e6",
     "packages": [
         {
             "name": "elavora/api-framework",
-            "version": "dev-main",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Elavora/api-framework.git",
-                "reference": "c4b0859148d62c8385837e3260bd9e7b8e4de19b"
+                "reference": "8043cb362adbb457c5746e06ff95298b9767f107"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Elavora/api-framework/zipball/8043cb362adbb457c5746e06ff95298b9767f107",
+                "reference": "8043cb362adbb457c5746e06ff95298b9767f107",
+                "shasum": ""
             },
             "require": {
                 "ext-ctype": "*",
@@ -21,14 +27,14 @@
                 "php": ">=8.3"
             },
             "require-dev": {
+                "elavora/code-standards": "^1.0",
                 "phpstan/phpstan": "^2.2",
                 "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0"
             },
-            "default-branch": true,
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.0-dev"
+                    "dev-main": "2.0-dev"
                 }
             },
             "autoload": {
@@ -36,35 +42,66 @@
                     "Elavora\\Api\\Framework\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Elavora\\Api\\Framework\\Tests\\": "tests/"
-                }
-            },
-            "scripts": {
-                "lint": [
-                    "php tools/lint.php"
-                ],
-                "test": [
-                    "phpunit -c phpunit.xml"
-                ],
-                "analyse": [
-                    "phpstan analyse --no-progress --memory-limit=512M"
-                ],
-                "check": [
-                    "@lint",
-                    "@test",
-                    "@analyse"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "description": "Nucleo HTTP modular do framework Elavora",
-            "time": "2026-09-28T19:41:31+00:00"
+            "support": {
+                "issues": "https://github.com/Elavora/api-framework/issues",
+                "source": "https://github.com/Elavora/api-framework/tree/2.0.0"
+            },
+            "time": "2026-10-18T20:19:48+00:00"
         }
     ],
     "packages-dev": [
+        {
+            "name": "elavora/code-standards",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Elavora/code-standards.git",
+                "reference": "6984bb1838423c159589ef818d0511fbd8e2f738"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Elavora/code-standards/zipball/6984bb1838423c159589ef818d0511fbd8e2f738",
+                "reference": "6984bb1838423c159589ef818d0511fbd8e2f738",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^12.0"
+            },
+            "bin": [
+                "bin/elavora-standards"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Elavora\\CodeStandards\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Regras de formatação e estilo da Elavora: PHP-CS-Fixer (PER-CS), EditorConfig e lint de sintaxe PHP",
+            "keywords": [
+                "coding-standard",
+                "editorconfig",
+                "lint",
+                "per-cs",
+                "php-cs-fixer"
+            ],
+            "support": {
+                "issues": "https://github.com/Elavora/code-standards/issues",
+                "source": "https://github.com/Elavora/code-standards/tree/1.1.0"
+            },
+            "time": "2026-10-18T20:18:18+00:00"
+        },
         {
             "name": "myclabs/deep-copy",
             "version": "1.13.4",
@@ -1811,18 +1848,9 @@
             "time": "2025-12-08T11:19:18+00:00"
         }
     ],
-    "aliases": [
-        {
-            "package": "elavora/api-framework",
-            "version": "dev-main",
-            "alias": "1.0.x-dev",
-            "alias_normalized": "1.0.9999999.9999999-dev"
-        }
-    ],
+    "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "elavora/api-framework": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
