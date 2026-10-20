@@ -246,6 +246,10 @@ final class PostCreateScriptTest extends TestCase
         self::assertSame(0, $this->runScript($root)['code']);
         $clean = Skeleton::snapshot($root);
 
+        // A primeira execução apaga tools/ (ficou vazia): recria a pasta para devolver a cópia do script.
+        if (!is_dir(dirname($root . '/' . Skeleton::SCRIPT))) {
+            mkdir(dirname($root . '/' . Skeleton::SCRIPT), 0777, true);
+        }
         file_put_contents($root . '/' . Skeleton::SCRIPT, $script);
         $result = $this->runScript($root);
 
