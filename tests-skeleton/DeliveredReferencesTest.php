@@ -68,6 +68,9 @@ final class DeliveredReferencesTest extends TestCase
             if ($file === 'README.md') {
                 $content = Skeleton::withoutMarkedBlock($content, Skeleton::README_START, Skeleton::README_END);
             }
+            if ($file === '.gitattributes') {
+                $content = Skeleton::withoutMarkedBlock($content, Skeleton::ATTRIBUTES_START, Skeleton::ATTRIBUTES_END);
+            }
             self::assertStringNotContainsString('MIGRACAO-BOOTSTRAP', $content, $file);
         }
     }
