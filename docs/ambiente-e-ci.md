@@ -121,7 +121,8 @@ por PR do Dependabot, ou se alguém precisa mudar à mão.
 | Imagem do PHP de produção | `FROM php:...-cli-alpine` do `Dockerfile` | Correções dentro da mesma versão do PHP chegam ao reconstruir com `docker compose build --pull`. Trocar a versão do PHP é manual: veja [Versão do PHP](#versão-do-php) |
 | Imagem do Composer usada no build | `FROM composer:2` do `Dockerfile` | Correções dentro do Composer 2 chegam ao reconstruir com `docker compose build --pull` |
 | Imagens dos serviços (Redis, MySQL, PostgreSQL) | `image` de cada arquivo em `core/compose/` | Correções dentro da mesma versão chegam com `docker compose ... pull`. Trocar a versão é manual: veja [Versões dos serviços](#versões-dos-serviços) |
-| Lint, PHPStan e PHPUnit | `tools/lint.php`, `phpstan.neon.dist`, `phpunit.xml` | manual |
+| Lint de sintaxe | `elavora/code-standards`, chamado pelo script `lint` do `composer.json` (`elavora-standards lint`) | **Dependabot** (`chore(deps-dev): bump elavora/code-standards ...`) |
+| PHPStan e PHPUnit (configuração) | `phpstan.neon.dist`, `phpunit.xml` | manual |
 | Entradas e bootstrap | `core/bootstrap/app.php`, `core/config/extensions.php`, `public/index.php`, `worker.php` | do projeto. São finos: o comportamento vem do framework, pelo Composer |
 | Código, testes e documentação | `app/`, `tests/`, `docs/`, `README.md` | do projeto |
 | Template de PR | não é copiado | Repositórios da organização Elavora herdam o template do `Elavora/.github`. Fora da organização, crie o seu, se quiser |

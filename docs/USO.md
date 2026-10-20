@@ -89,11 +89,13 @@ composer check
 docker build -t api-skeleton .
 ```
 
-O lint cobre `app/`, `core/`, `public/`, `tests/` e `worker.php` sem depender de
-`find`, `xargs` ou Bash. O PHPStan roda no nível 8 sem baseline. O entrypoint
-opcional de worker fica fora da análise estática enquanto
-`elavora/api-queue-worker` não estiver instalado, mas permanece coberto pelo
-lint.
+O `composer lint` roda o `elavora-standards lint`, do pacote `elavora/code-standards`. Ele roda `php -l` em todo
+arquivo `.php` do projeto, menos `vendor/` e arquivos e pastas que começam com ponto. Melhorias no lint chegam
+pelo PR do Dependabot que atualiza o pacote. Detalhes em
+[lint.md](https://github.com/Elavora/code-standards/blob/main/docs/lint.md).
+
+O PHPStan roda no nível 8 sem baseline. O entrypoint opcional de worker fica fora da análise estática enquanto
+`elavora/api-queue-worker` não estiver instalado, mas o lint confere a sintaxe dele.
 
 Ao mudar dependências, atualize e revise o lock deliberadamente. Builds e
 pipelines devem continuar usando `composer install`, nunca `composer update`.

@@ -178,7 +178,7 @@ Por isso os testes conferem o **formato** das referências que o Dependabot atua
 | --- | --- | --- |
 | SHA e comentário do `Elavora/.github` nos workflows | a linha `uses` tem o caminho certo, `@`, um SHA de 40 caracteres hexadecimais minúsculos, um espaço, `# ` e uma versão `X.Y.Z` | qual SHA e qual versão |
 | SHA e comentário das actions de terceiros | a linha `uses` tem `@`, um SHA de 40 caracteres hexadecimais minúsculos e um comentário `# v` seguido de uma versão (`v7`, `v7.0`, `v7.0.1`) | qual SHA e qual versão |
-| Restrição de versão no `composer.json` | o major: `elavora/api-framework` começa com `^2.`; `elavora/code-standards` começa com `^1.` | o resto da restrição (`^2.0` e `^2.1` passam) |
+| Restrição de versão no `composer.json` | o major: `elavora/api-framework` começa com `^2.`; `elavora/code-standards` começa com `^1.` seguido de um minor 1 ou maior (`^1.1`, `^1.2`, `^1.10`) | o resto da restrição (`^2.0` e `^2.1` passam) |
 | Versões instaladas no `composer.lock` | nada | o conteúdo do lock |
 | Bloco do `.editorconfig` (quando a versão nova do pacote muda o bloco) | os marcadores e a estrutura (veja [Regras de estilo](#regras-de-estilo)) | se o bloco é igual ao que a versão travada gera |
 
@@ -187,7 +187,8 @@ Exemplos que precisam passar:
 - `uses: Elavora/.github/.github/workflows/php-quality.yml@d96e9bb606f84016dd031ad748d009d820fd5487 # 1.3.0` trocado
   por outro SHA com `# 1.4.0`;
 - `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7` trocado por outro SHA com `# v7.1.0`;
-- `"elavora/api-framework": "^2.0"` trocado por `"^2.1"`.
+- `"elavora/api-framework": "^2.0"` trocado por `"^2.1"`;
+- `"elavora/code-standards": "^1.1"` trocado por `"^1.2"`.
 
 Exemplos que precisam falhar:
 
@@ -195,7 +196,9 @@ Exemplos que precisam falhar:
 - `uses: Elavora/.github/.github/workflows/php-quality.yml@d96e9bb606f84016dd031ad748d009d820fd5487` (sem o comentário
   de versão);
 - `uses: Elavora/.github/.github/workflows/php-quality.yml@d96e9bb` (SHA curto);
-- `"elavora/api-framework": "^3.0"` (outro major).
+- `"elavora/api-framework": "^3.0"` (outro major);
+- `"elavora/code-standards": "^1.0"` (minor abaixo de 1: a 1.0.0 não tem o `lint`);
+- `"elavora/code-standards": "^2.1"` (outro major).
 
 Os valores da tabela [Versões e referências](#versões-e-referências) são os da adoção. Nenhum teste os compara com
 os workflows. Depois de um PR do Dependabot, a tabela pode ficar com o valor antigo.
@@ -226,7 +229,7 @@ também para o próprio repositório `api-skeleton`, que usa os mesmos arquivos.
 | Imagem de desenvolvimento | `ghcr.io/elavora/php-dev:8.3-latest` | sozinha: a tag acompanha as estáveis da imagem |
 | Imagem do CI de qualidade | nenhuma no `quality.yml`: vale o padrão do `php-quality.yml`, que na 1.3.0 é `ghcr.io/elavora/php-dev:8.3-latest` | sozinha |
 | `Elavora/.github` | `d96e9bb606f84016dd031ad748d009d820fd5487`, com o comentário `# 1.3.0` | PR do Dependabot |
-| `elavora/code-standards` | `^1.0` em `require-dev` (o lock instala a 1.1.0) | PR do Dependabot |
+| `elavora/code-standards` | `^1.1` em `require-dev` (o lock instala a 1.1.0) | PR do Dependabot |
 | `elavora/api-framework` | `^2.0` em `require` (o lock instala a 2.0.0) | PR do Dependabot |
 | PHP | `8.3`: `php:8.3-cli-alpine` no `Dockerfile`, `8.3-latest` na imagem de desenvolvimento, `>=8.3` em `require.php` | decisão do projeto, todos os lugares juntos |
 
@@ -244,12 +247,17 @@ Só as mudanças desta tarefa. O resto continua igual.
 
 - `require.elavora/api-framework`: `^2.0`. Sai o `dev-main as 1.0.x-dev`.
 - A chave `repositories` (repositório VCS do `api-framework`) é removida. O framework vem do Packagist.
-- `require-dev.elavora/code-standards`: `^1.0`. O `friendsofphp/php-cs-fixer` **não** entra: o binário vem da
-  imagem.
+- `require-dev.elavora/code-standards`: `^1.1`. O subcomando `lint` só existe a partir da 1.1.0, e o CI roda o lint
+  com as dependências nas versões mínimas. Com `^1.0`, o CI instalaria a 1.0.0 e o `composer lint` falharia.
+  O `friendsofphp/php-cs-fixer` **não** entra: o binário vem da imagem.
+- `scripts.lint`: exatamente `elavora-standards lint`, sem argumentos. Sai o `@php tools/lint.php`, e o arquivo
+  `tools/lint.php` é removido. O lint do pacote confere todo `.php` do projeto, menos `vendor/` e o que começa com
+  ponto, então não precisa de lista de pastas. O `scripts.check` continua chamando `@lint`.
 - `scripts.post-install-cmd` e `scripts.post-update-cmd`: cada um é exatamente
   `["Elavora\\CodeStandards\\Composer::sync"]`.
 - `scripts.post-create-project-cmd` é só do skeleton (veja [`composer.json` do skeleton](#composerjson-do-skeleton)).
-- O `composer.lock` é regenerado em container, porque `require` e `require-dev` mudaram.
+- O `composer.lock` é regenerado em container, porque `require` e `require-dev` mudaram. Na troca de `^1.0` para
+  `^1.1`, a versão instalada continua a 1.1.0; muda só o `content-hash` (`composer update --lock`).
 
 A sincronização é um método PHP, e não o comando `vendor/bin/elavora-standards sync`. O motivo é o build de
 produção, que roda `composer install --no-dev`.
@@ -609,8 +617,8 @@ Passos, nesta ordem:
      igual, byte a byte, inclusive a formatação e as quebras de linha;
    - se for igual, ou se o passo 4 não mudou o `composer.json`, o lock fica igual e não há linha na saída;
    - se o `composer.lock` não existir, o passo é ignorado, sem erro.
-6. **Remove o próprio script.** Se `tools/` ficar vazia, ela também é removida. No skeleton atual ela não fica
-   vazia, porque tem o `lint.php`.
+6. **Remove o próprio script.** Se `tools/` ficar vazia, ela também é removida. No skeleton atual ela fica vazia,
+   porque o `tools/lint.php` não existe mais: o projeto criado não tem a pasta `tools/`.
 7. Imprime na saída padrão uma linha por item removido ou alterado e termina com código 0. Os arquivos alterados
    aparecem como `alterado: composer.json` e `alterado: composer.lock`, uma vez cada, nesta ordem.
 
@@ -724,7 +732,8 @@ Todas as checagens de referências seguem
   - conteúdo de `app/` igual à tabela de [`app/` e `tests/`](#app-e-tests), o `tasks.php` exato, a ausência dos
     arquivos de exemplo e de seus testes, e nenhuma citação aos exemplos nos arquivos entregues.
 - O `composer.json`: `elavora/api-framework` com restrição que começa com `^2.`, sem `dev-` nem chave
-  `repositories`; `elavora/code-standards` em `require-dev`, com restrição que começa com `^1.`; os callbacks
+  `repositories`; `elavora/code-standards` em `require-dev`, com restrição que começa com `^1.` e minor 1 ou
+  maior; o script `lint` igual a `elavora-standards lint`; a ausência de `tools/lint.php`; os callbacks
   `Elavora\CodeStandards\Composer::sync`; e o `post-create-project-cmd`.
 - **O build de produção continua funcionando** com o `elavora/code-standards` fora da instalação `--no-dev`:
   `docker build` do `Dockerfile` termina com sucesso, e a imagem gerada não tem `vendor/elavora/code-standards`.
