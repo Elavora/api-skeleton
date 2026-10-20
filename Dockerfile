@@ -37,12 +37,9 @@ FROM runtime AS dependencies
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 COPY composer.json composer.lock ./
 
-# Instala dependencias de producao. Pacotes de desenvolvimento ficam fora da
-# imagem final. O Git existe apenas neste estagio enquanto as branches
-# coordenadas ainda nao possuem artefatos dist.
-RUN apk add --no-cache --virtual .composer-install-deps git
-RUN composer install --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader \
-    && apk del .composer-install-deps
+# Instala dependencias de producao a partir dos zips do Packagist (--prefer-dist).
+# Pacotes de desenvolvimento ficam fora da imagem final.
+RUN composer install --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader
 
 FROM runtime
 
