@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e338dc8630e78afa90b257cbc11702e6",
+    "content-hash": "8b90d8c9edc1bb6abb991cfab4a9dfb8",
     "packages": [
         {
             "name": "elavora/api-framework",
