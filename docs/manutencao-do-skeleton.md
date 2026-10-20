@@ -495,8 +495,10 @@ O arquivo ganha, no fim, um bloco delimitado por duas linhas exatas:
 
 ### `composer.json` do skeleton
 
-Em `scripts`, a chave `post-create-project-cmd` tem exatamente `["@php tools/skeleton-post-create.php"]`. É a
-única chave do `composer.json` que é só do skeleton.
+Em `scripts`, a chave `post-create-project-cmd` tem exatamente `["@php tools/skeleton-post-create.php"]`.
+
+Três chaves do `composer.json` são só do skeleton e saem na criação do projeto: `name` (`elavora/api-skeleton`),
+`description` e `scripts.post-create-project-cmd`.
 
 As outras mudanças (framework `^2.0`, saída do repositório VCS, `elavora/code-standards` e a sincronização) fazem
 parte da entrega. Elas estão em [`composer.json`](#composerjson).
@@ -517,12 +519,25 @@ Passos, nesta ordem:
    incluindo as duas linhas.
 3. **.gitattributes**: remove o trecho que vai da linha `# skeleton:inicio` até a linha `# skeleton:fim`, incluindo
    as duas linhas.
-4. **composer.json**: remove a chave `scripts.post-create-project-cmd`. Se `scripts` ficar vazio, remove também
-   `scripts`. Todas as outras chaves continuam, na mesma ordem. O arquivo é regravado com indentação de 4 espaços,
-   sem escapar `/` nem caracteres acentuados, e termina com uma quebra de linha.
-5. **Remove o próprio script.** Se `tools/` ficar vazia, ela também é removida. No skeleton atual ela não fica
+4. **composer.json**: remove as chaves `name`, `description` e `scripts.post-create-project-cmd`. Se `scripts`
+   ficar vazio, remove também `scripts`. Chave que não existe é ignorada, sem erro. Todas as outras chaves
+   continuam, na mesma ordem. Se pelo menos uma chave saiu, o arquivo é regravado com indentação de 4 espaços, sem
+   escapar `/` nem caracteres acentuados, e termina com uma quebra de linha. Se nenhuma saiu, o arquivo fica igual,
+   byte a byte, e não há linha na saída.
+   - `name` (`elavora/api-skeleton`) e `description` são do pacote do skeleton. O projeto criado não é esse
+     pacote. Quem quiser publicar o projeto preenche os dois.
+   - Num `type: project`, o `name` é opcional: `composer validate --strict --no-check-publish` passa sem ele.
+5. **composer.lock**: o `content-hash` do lock depende do `name` do `composer.json`. Sem atualizar o hash, o
+   `composer validate` reprova o lock com "The lock file is not up to date". Por isso, depois do passo 4:
+   - o script calcula o hash do `composer.json` novo com o mesmo algoritmo do Composer (abaixo);
+   - se o valor for diferente do `content-hash` atual, troca só esse valor no arquivo. Todo o resto do lock fica
+     igual, byte a byte, inclusive a formatação e as quebras de linha;
+   - se for igual, ou se o passo 4 não mudou o `composer.json`, o lock fica igual e não há linha na saída;
+   - se o `composer.lock` não existir, o passo é ignorado, sem erro.
+6. **Remove o próprio script.** Se `tools/` ficar vazia, ela também é removida. No skeleton atual ela não fica
    vazia, porque tem o `lint.php`.
-6. Imprime na saída padrão uma linha por item removido ou alterado e termina com código 0.
+7. Imprime na saída padrão uma linha por item removido ou alterado e termina com código 0. Os arquivos alterados
+   aparecem como `alterado: composer.json` e `alterado: composer.lock`, uma vez cada, nesta ordem.
 
 Regras dos trechos marcados (passos 2 e 3):
 
@@ -533,11 +548,25 @@ Regras dos trechos marcados (passos 2 e 3):
   arquivo fica igual. O script escreve um aviso na saída de erro, com o nome do arquivo, e continua. O código de
   saída continua 0, porque o projeto já foi criado e o problema é só cosmético.
 
+Algoritmo do `content-hash` (o mesmo do `Locker::getContentHash` do Composer 2):
+
+1. Do `composer.json` decodificado como array, pegue só as chaves que existirem entre `name`, `version`, `require`,
+   `require-dev`, `conflict`, `replace`, `provide`, `minimum-stability`, `prefer-stable`, `repositories` e `extra`.
+2. Se existir `config.platform`, acrescente-o como `config` => [`platform` => valor].
+3. Ordene as chaves do primeiro nível (`ksort`).
+4. O hash é `md5(json_encode($dados))`, sem flags no `json_encode`.
+
+O resultado tem que bater com o do Composer: depois do script, `composer validate --strict --no-check-publish`
+passa no projeto criado. Conferido na imagem `ghcr.io/elavora/php-dev:8.3-latest` (Composer 2.10.3): sem o `name`,
+o hash calculado assim é igual ao que `composer update --lock` grava, e o `validate` volta a passar.
+
 Erros:
 
 - Falha ao remover um caminho ou ao gravar um arquivo: mensagem na saída de erro, com o caminho, e código de saída 1.
   Os passos seguintes não rodam.
 - `composer.json` ausente ou com JSON inválido: mensagem na saída de erro e código 1, sem alterar o arquivo.
+- `composer.lock` existente, mas com JSON inválido ou sem a chave `content-hash` como texto: mensagem na saída de
+  erro e código 1. O script confere o lock no início, junto com o `composer.json`, antes de alterar qualquer arquivo.
 
 Exemplo de `README.md`, antes e depois:
 
@@ -635,7 +664,12 @@ Todas as checagens de referências seguem
 - O script de limpeza, executado numa cópia do repositório, em pasta temporária. Depois dele:
   - nenhum caminho de `SKELETON_ONLY` existe;
   - os marcadores sumiram do `README.md` e do `.gitattributes`;
-  - o `composer.json` não tem `post-create-project-cmd`;
+  - o `composer.json` não tem `name`, `description` nem `post-create-project-cmd`;
+  - `composer validate --strict --no-check-publish` passa na cópia (o `content-hash` do lock bate);
+  - o `composer.lock` difere do original só no valor do `content-hash`;
+  - também os casos: `composer.json` sem `name` ou sem `description` (só sai o que existe); `composer.json` já sem
+    as três chaves (nenhum dos dois arquivos muda); `composer.lock` ausente (passo ignorado); `composer.lock` com JSON
+    inválido ou sem `content-hash` (código 1 e nenhum arquivo alterado);
   - os arquivos da entrega continuam iguais.
 
   Também os casos de marcadores incompletos e de caminhos já ausentes.

@@ -22,6 +22,9 @@ Requisitos:
 O projeto versiona `composer.lock`. Instalações, CI e o Dockerfile usam
 `composer install`, portanto reproduzem as mesmas versões.
 
+O `composer.json` do projeto criado vem sem `name` e sem `description`, que eram do pacote do skeleton. Preencha os
+dois se for publicar o projeto como pacote.
+
 ## Ambiente do Compose
 
 O serviço `api` carrega `.env` por `env_file`. O arquivo é opcional: sem ele, o
