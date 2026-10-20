@@ -80,6 +80,19 @@ final class Skeleton
         return str_starts_with($constraint, '^' . $major . '.') && !str_contains($constraint, 'dev-');
     }
 
+    /** Restrição `^<major>.<minor>...` com o major exato e minor >= $minMinor (`^1.1`, `^1.10` passam; `^1.0` falha). */
+    public static function hasMajorWithMinorAtLeast(string $constraint, int $major, int $minMinor): bool
+    {
+        if (!self::hasMajor($constraint, $major)) {
+            return false;
+        }
+        if (preg_match('~^\^' . $major . '\.(\d+)~', $constraint, $m) !== 1) {
+            return false;
+        }
+
+        return (int) $m[1] >= $minMinor;
+    }
+
     /**
      * Referências à imagem de desenvolvimento encontradas no texto.
      *

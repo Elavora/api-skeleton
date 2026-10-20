@@ -182,7 +182,7 @@ final class PostCreateScriptTest extends TestCase
         foreach (Skeleton::SKELETON_ONLY as $path) {
             self::assertFileDoesNotExist($root . '/' . $path, "{$path} deveria ter sido removido");
         }
-        self::assertFileExists($root . '/tools/lint.php');
+        self::assertDirectoryDoesNotExist($root . '/tools', 'sem o lint.php, tools/ fica vazia e sai');
         self::assertSame(['quality.yml'], array_map('basename', glob($root . '/.github/workflows/*') ?: []));
 
         $readmeAfter = (string) file_get_contents($root . '/README.md');
@@ -226,13 +226,14 @@ final class PostCreateScriptTest extends TestCase
             self::assertArrayHasKey($path, $before, "arquivo novo criado pelo script: {$path}");
         }
 
-        // 6 caminhos removidos + README + .gitattributes + composer.json + composer.lock + o próprio script.
+        // 6 caminhos removidos + README + .gitattributes + composer.json + composer.lock + o próprio script + tools/.
         $lines = self::outputLines($result['stdout']);
-        self::assertCount(11, $lines, "uma linha por item removido ou alterado:\n" . $result['stdout']);
+        self::assertCount(12, $lines, "uma linha por item removido ou alterado:\n" . $result['stdout']);
         self::assertSame(
             ['alterado: composer.json', 'alterado: composer.lock'],
             array_values(array_filter($lines, static fn (string $l): bool => str_starts_with($l, 'alterado: composer.'))),
         );
+        self::assertContains('removido: tools', $lines);
 
         self::assertSame($decoyBefore, Skeleton::snapshot($decoy), 'o script não pode mexer no diretório atual');
     }
