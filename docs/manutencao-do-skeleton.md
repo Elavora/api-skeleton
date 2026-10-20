@@ -297,6 +297,53 @@ Conforme o contrato do `elavora/code-standards` (`docs/adocao.md` do pacote):
   conferido à mão, no PR de adoção. Não é teste automático, porque um PR do Dependabot pode mudar o bloco (veja
   [Atualizações do Dependabot não quebram os testes](#atualizações-do-dependabot-não-quebram-os-testes)).
 
+### `Dockerfile`
+
+O estágio `dependencies` não instala o Git.
+
+O Git só existia ali porque o framework vinha de uma branch, por repositório VCS, sem zip para baixar. Agora o
+`elavora/api-framework` `^2.0` vem do Packagist. Com `--prefer-dist`, o Composer baixa o zip de cada pacote e não
+precisa do Git.
+
+O estágio `dependencies` fica exatamente assim:
+
+```dockerfile
+FROM runtime AS dependencies
+
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+COPY composer.json composer.lock ./
+
+# Instala dependencias de producao a partir dos zips do Packagist (--prefer-dist).
+# Pacotes de desenvolvimento ficam fora da imagem final.
+RUN composer install --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader
+```
+
+O que sai:
+
+- a linha `RUN apk add --no-cache --virtual .composer-install-deps git`;
+- o `&& apk del .composer-install-deps` no fim do `composer install`;
+- o comentário sobre as branches coordenadas sem artefatos dist.
+
+O resto do `Dockerfile` não muda: os estágios `composer` e `runtime`, o estágio final, o `EXPOSE` e o `CMD`.
+
+Regras que os testes conferem:
+
+- O `Dockerfile` não tem a palavra `git`, em nenhuma caixa (`git`, `Git`, `GIT`), nem o texto
+  `.composer-install-deps`.
+- No `composer.lock`, todo pacote da lista `packages` (as dependências de produção) tem `dist` com `type` igual a
+  `zip`. Sem isso, o `--prefer-dist` precisaria clonar o pacote, e o build falharia sem o Git. A regra confere só o
+  formato, não as versões. Assim, um PR do Dependabot que atualize o lock continua passando.
+- O `docker build` do `Dockerfile` termina com sucesso (o teste de build de produção que já existe).
+- A imagem do estágio `dependencies` (`docker build --target dependencies`) não tem o comando `git`:
+  `command -v git` não encontra nada.
+
+Exemplos:
+
+- passa: o estágio `dependencies` acima, sem nenhuma linha `apk`;
+- falha: `RUN apk add --no-cache --virtual .composer-install-deps git`;
+- falha: `RUN apk add --no-cache git` em qualquer estágio;
+- falha: um pacote em `packages` do `composer.lock` só com `source` (tipo `git`) e sem `dist`.
+
 ### `.devcontainer/devcontainer.json`
 
 Segue o `examples/devcontainer.json` do `Elavora/devcontainers`:
@@ -569,9 +616,13 @@ Todas as checagens de referências seguem
   `Elavora\CodeStandards\Composer::sync`; e o `post-create-project-cmd`.
 - **O build de produção continua funcionando** com o `elavora/code-standards` fora da instalação `--no-dev`:
   `docker build` do `Dockerfile` termina com sucesso, e a imagem gerada não tem `vendor/elavora/code-standards`.
-  - O teste precisa de Docker e fica no grupo PHPUnit `docker` (`#[Group('docker')]`).
-  - Quando o comando `docker` não existir no ambiente, o teste é pulado (`markTestSkipped`), não reprovado.
-  - No CI, ele roda no job `build-producao`.
+  - O build também funciona sem o Git: a imagem do estágio `dependencies` não tem o comando `git` (veja
+    [`Dockerfile`](#dockerfile)).
+  - Os testes que precisam de Docker ficam no grupo PHPUnit `docker` (`#[Group('docker')]`).
+  - Quando o comando `docker` não existir no ambiente, eles são pulados (`markTestSkipped`), não reprovados.
+  - No CI, eles rodam no job `build-producao`.
+- O `Dockerfile` sem `git` nem `.composer-install-deps`, e todo pacote de `packages` do `composer.lock` com `dist`
+  do tipo `zip`. Esses testes não precisam de Docker e rodam no job `entrega`.
 - Os workflows só do skeleton: condição de repositório, formato da referência ao `Elavora/.github` (SHA e
   comentário), `id-token: write`, ausência de `automation_ref` e dos SHAs antigos.
 - A lista `SKELETON_ONLY`, o bloco do `.gitattributes` e a tabela desta página batem.
