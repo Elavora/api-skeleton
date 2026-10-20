@@ -11,6 +11,7 @@ use SkeletonTests\Support\Skeleton;
 /**
  * docs/manutencao-do-skeleton.md: "O que `tests-skeleton/` verifica" (build de produção).
  * O elavora/code-standards fica fora da instalação --no-dev e o build continua funcionando.
+ * "`Dockerfile`": o estágio dependencies não tem o comando git.
  */
 #[Group('docker')]
 final class ProductionBuildTest extends TestCase
@@ -46,5 +47,19 @@ final class ProductionBuildTest extends TestCase
         ]);
         self::assertSame(0, $find['code'], $find['stderr']);
         self::assertSame('', trim($find['stdout']), 'a imagem de produção não pode ter vendor/elavora/code-standards');
+    }
+
+    public function testDependenciesStageHasNoGit(): void
+    {
+        $this->image = 'elavora-skeleton-deps-test:' . bin2hex(random_bytes(6));
+
+        $build = Skeleton::run(['docker', 'build', '--target', 'dependencies', '--tag', $this->image, Skeleton::root()]);
+        self::assertSame(0, $build['code'], "docker build --target dependencies falhou:\n" . $build['stderr'] . $build['stdout']);
+
+        $git = Skeleton::run([
+            'docker', 'run', '--rm', '--entrypoint', 'sh', $this->image, '-c', 'command -v git; true',
+        ]);
+        self::assertSame(0, $git['code'], $git['stderr']);
+        self::assertSame('', trim($git['stdout']), 'o estágio dependencies não pode ter o comando git');
     }
 }
