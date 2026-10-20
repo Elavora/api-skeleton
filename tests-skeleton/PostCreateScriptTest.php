@@ -162,7 +162,7 @@ final class PostCreateScriptTest extends TestCase
         }
 
         $lines = array_values(array_filter(array_map('trim', explode("\n", $result['stdout']))));
-        self::assertCount(9, $lines, "uma linha por item removido ou alterado:\n" . $result['stdout']);
+        self::assertCount(10, $lines, "uma linha por item removido ou alterado:\n" . $result['stdout']);
 
         self::assertSame($decoyBefore, Skeleton::snapshot($decoy), 'o script não pode mexer no diretório atual');
     }
