@@ -590,8 +590,8 @@ Todas as checagens de referências seguem
   Também os casos de marcadores incompletos e de caminhos já ausentes.
 - A documentação entregue (`README.md` fora do bloco do skeleton, `docs/USO.md` e `docs/ambiente-e-ci.md`) não cita
   `8.3-0.`, nenhuma sequência de 40 caracteres hexadecimais, `manutencao-do-skeleton.md` nem `MIGRACAO-BOOTSTRAP`.
-  Nenhum arquivo entregue cita `MIGRACAO-BOOTSTRAP`. Ficam de fora só os arquivos só do skeleton e o bloco do
-  skeleton no `README.md`.
+  Nenhum arquivo entregue cita `MIGRACAO-BOOTSTRAP`. Ficam de fora só os arquivos só do skeleton e os blocos do
+  skeleton no `README.md` e no `.gitattributes`, que o script remove na criação do projeto.
 - O `quality.yml` não tem `image` nem `php-dev`.
 
 ---
