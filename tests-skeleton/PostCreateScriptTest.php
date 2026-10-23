@@ -71,6 +71,59 @@ final class PostCreateScriptTest extends TestCase
         ], self::JSON_FLAGS) . "\n";
     }
 
+    /** content-hash pelo algoritmo da doc (Locker::getContentHash do Composer 2). */
+    private static function contentHash(string $composerJson): string
+    {
+        $composer = json_decode($composerJson, true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($composer);
+        $keys = ['name', 'version', 'require', 'require-dev', 'conflict', 'replace', 'provide',
+            'minimum-stability', 'prefer-stable', 'repositories', 'extra'];
+        $data = array_intersect_key($composer, array_flip($keys));
+        if (isset($composer['config']['platform'])) {
+            $data['config'] = ['platform' => $composer['config']['platform']];
+        }
+        ksort($data);
+
+        return md5((string) json_encode($data));
+    }
+
+    private static function lockHash(string $lock): string
+    {
+        $data = json_decode($lock, true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($data);
+        self::assertIsString($data['content-hash'] ?? null);
+
+        return $data['content-hash'];
+    }
+
+    private static function replaceHash(string $lock, string $old, string $new): string
+    {
+        $count = 0;
+        $result = preg_replace(
+            '~("content-hash"\s*:\s*")' . preg_quote($old, '~') . '"~',
+            '${1}' . $new . '"',
+            $lock,
+            1,
+            $count
+        );
+        self::assertSame(1, $count, 'content-hash não encontrado no lock');
+
+        return (string) $result;
+    }
+
+    /** Lock mínimo, com formatação própria (tab, CRLF) para conferir que só o hash muda. */
+    private static function lockWithHash(string $hash): string
+    {
+        return "{\r\n\t\"_readme\": [\"não edite\"],\r\n\t\"content-hash\": \"{$hash}\",\r\n"
+            . "\t\"packages\": [],\r\n\t\"packages-dev\": []\r\n}\r\n";
+    }
+
+    /** @return list<string> */
+    private static function outputLines(string $stdout): array
+    {
+        return array_values(array_filter(array_map('trim', explode("\n", $stdout)), static fn (string $l): bool => $l !== ''));
+    }
+
     private static function readmeWithBlock(string $eol = "\n"): string
     {
         return implode($eol, [
@@ -114,6 +167,8 @@ final class PostCreateScriptTest extends TestCase
         $readme = (string) file_get_contents($root . '/README.md');
         $attributes = (string) file_get_contents($root . '/.gitattributes');
         $composer = json_decode((string) file_get_contents($root . '/composer.json'), false, flags: JSON_THROW_ON_ERROR);
+        self::assertFileExists($root . '/composer.lock');
+        $lock = (string) file_get_contents($root . '/composer.lock');
 
         // Diretório atual com marcadores próprios: o script usa dirname(__DIR__), não o cwd.
         $decoy = $this->tempDir('decoy');
@@ -144,15 +199,25 @@ final class PostCreateScriptTest extends TestCase
 
         self::assertIsObject($composer);
         self::assertIsObject($composer->scripts ?? null);
-        unset($composer->scripts->{'post-create-project-cmd'});
-        self::assertSame(
-            json_encode($composer, self::JSON_FLAGS) . "\n",
-            (string) file_get_contents($root . '/composer.json'),
-        );
+        self::assertTrue(isset($composer->name, $composer->description), 'o skeleton tem name e description');
+        unset($composer->name, $composer->description, $composer->scripts->{'post-create-project-cmd'});
+        $composerAfter = (string) file_get_contents($root . '/composer.json');
+        self::assertSame(json_encode($composer, self::JSON_FLAGS) . "\n", $composerAfter);
+
+        // composer.lock: só o valor do content-hash muda.
+        $lockAfter = (string) file_get_contents($root . '/composer.lock');
+        $oldHash = self::lockHash($lock);
+        $newHash = self::contentHash($composerAfter);
+        self::assertNotSame($oldHash, $newHash, 'sem o name, o content-hash muda');
+        self::assertSame($newHash, self::lockHash($lockAfter));
+        self::assertSame(self::replaceHash($lock, $oldHash, $newHash), $lockAfter);
+
+        $validate = Skeleton::run(['composer', 'validate', '--strict', '--no-check-publish', '--no-interaction'], $root);
+        self::assertSame(0, $validate['code'], "composer validate reprovou:\n" . $validate['stdout'] . $validate['stderr']);
 
         $after = Skeleton::snapshot($root);
         foreach ($before as $path => $hash) {
-            if (Skeleton::isSkeletonOnly($path) || in_array($path, ['README.md', '.gitattributes', 'composer.json'], true)) {
+            if (Skeleton::isSkeletonOnly($path) || in_array($path, ['README.md', '.gitattributes', 'composer.json', 'composer.lock'], true)) {
                 continue;
             }
             self::assertSame($hash, $after[$path] ?? null, "arquivo da entrega alterado ou removido: {$path}");
@@ -161,8 +226,13 @@ final class PostCreateScriptTest extends TestCase
             self::assertArrayHasKey($path, $before, "arquivo novo criado pelo script: {$path}");
         }
 
-        $lines = array_values(array_filter(array_map('trim', explode("\n", $result['stdout']))));
-        self::assertCount(10, $lines, "uma linha por item removido ou alterado:\n" . $result['stdout']);
+        // 6 caminhos removidos + README + .gitattributes + composer.json + composer.lock + o próprio script.
+        $lines = self::outputLines($result['stdout']);
+        self::assertCount(11, $lines, "uma linha por item removido ou alterado:\n" . $result['stdout']);
+        self::assertSame(
+            ['alterado: composer.json', 'alterado: composer.lock'],
+            array_values(array_filter($lines, static fn (string $l): bool => str_starts_with($l, 'alterado: composer.'))),
+        );
 
         self::assertSame($decoyBefore, Skeleton::snapshot($decoy), 'o script não pode mexer no diretório atual');
     }
@@ -288,6 +358,7 @@ final class PostCreateScriptTest extends TestCase
             {
                 "name": "acme/api",
                 "description": "Projeto com acentuação e barra/normal",
+                "homepage": "https://exemplo.test/acentuação/barra/normal",
                 "require": {"php": ">=8.3"},
                 "scripts": {
                     "lint": "@php tools/lint.php",
@@ -303,12 +374,13 @@ final class PostCreateScriptTest extends TestCase
         $result = $this->runScript($root);
 
         self::assertSame(0, $result['code'], $result['stderr']);
+        self::assertStringNotContainsString('"name"', (string) file_get_contents($root . '/composer.json'));
         $expected = json_decode($original, false, flags: JSON_THROW_ON_ERROR);
-        unset($expected->scripts->{'post-create-project-cmd'});
+        unset($expected->name, $expected->description, $expected->scripts->{'post-create-project-cmd'});
         $actual = (string) file_get_contents($root . '/composer.json');
         self::assertSame(json_encode($expected, self::JSON_FLAGS) . "\n", $actual);
         self::assertStringContainsString('acentuação', $actual);
-        self::assertStringContainsString('barra/normal', $actual);
+        self::assertStringContainsString('https://exemplo.test/acentuação/barra/normal', $actual);
         self::assertStringNotContainsString("\n\t", $actual);
     }
 
@@ -325,7 +397,7 @@ final class PostCreateScriptTest extends TestCase
 
         self::assertSame(0, $result['code'], $result['stderr']);
         self::assertSame(
-            json_encode(['name' => 'acme/api', 'license' => 'MIT'], self::JSON_FLAGS) . "\n",
+            json_encode(['license' => 'MIT'], self::JSON_FLAGS) . "\n",
             (string) file_get_contents($root . '/composer.json'),
         );
     }
@@ -353,6 +425,140 @@ final class PostCreateScriptTest extends TestCase
         self::assertSame(1, $result['code']);
         self::assertNotSame('', trim($result['stderr']));
         self::assertFileDoesNotExist($root . '/composer.json');
+    }
+
+    // ------------------------------------------------------------------ name, description e composer.lock
+
+    /** @return iterable<string, array{array<string, mixed>, array<string, mixed>}> */
+    public static function partialSkeletonKeys(): iterable
+    {
+        $post = ['post-create-project-cmd' => ['@php tools/skeleton-post-create.php'], 'test' => 'phpunit'];
+
+        yield 'sem name' => [
+            ['description' => 'Skeleton', 'license' => 'MIT', 'scripts' => $post],
+            ['license' => 'MIT', 'scripts' => ['test' => 'phpunit']],
+        ];
+        yield 'sem description' => [
+            ['name' => 'acme/api', 'license' => 'MIT', 'scripts' => $post],
+            ['license' => 'MIT', 'scripts' => ['test' => 'phpunit']],
+        ];
+        yield 'sem post-create-project-cmd' => [
+            ['name' => 'acme/api', 'description' => 'Skeleton', 'license' => 'MIT', 'scripts' => ['test' => 'phpunit']],
+            ['license' => 'MIT', 'scripts' => ['test' => 'phpunit']],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $original
+     * @param array<string, mixed> $expected
+     */
+    #[DataProvider('partialSkeletonKeys')]
+    public function testRemovesOnlyTheSkeletonKeysThatExist(array $original, array $expected): void
+    {
+        $root = $this->fixture(['composer.json' => json_encode($original, self::JSON_FLAGS) . "\n"] + self::defaultFiles());
+
+        $result = $this->runScript($root);
+
+        self::assertSame(0, $result['code'], $result['stderr']);
+        self::assertSame(json_encode($expected, self::JSON_FLAGS) . "\n", (string) file_get_contents($root . '/composer.json'));
+        self::assertContains('alterado: composer.json', self::outputLines($result['stdout']));
+    }
+
+    public function testComposerJsonWithoutSkeletonKeysStaysByteForByte(): void
+    {
+        $composer = "{\n  \"license\": \"MIT\",\n  \"require\": {\"php\": \">=8.3\"}\n}";
+        $lock = self::lockWithHash(str_repeat('0', 32));
+        $root = $this->fixture(['composer.json' => $composer, 'composer.lock' => $lock] + self::defaultFiles());
+
+        $result = $this->runScript($root);
+
+        self::assertSame(0, $result['code'], $result['stderr']);
+        self::assertSame($composer, (string) file_get_contents($root . '/composer.json'));
+        self::assertSame($lock, (string) file_get_contents($root . '/composer.lock'), 'composer.json igual: o lock não muda');
+        self::assertStringNotContainsString('composer.json', $result['stdout']);
+        self::assertStringNotContainsString('composer.lock', $result['stdout']);
+    }
+
+    public function testUpdatesOnlyTheContentHashOfTheLock(): void
+    {
+        $composer = json_encode([
+            'name' => 'acme/api',
+            'description' => 'Skeleton',
+            'require' => ['php' => '>=8.3'],
+            'config' => ['platform' => ['php' => '8.3.0'], 'sort-packages' => true],
+            'scripts' => ['post-create-project-cmd' => ['@php tools/skeleton-post-create.php']],
+        ], self::JSON_FLAGS) . "\n";
+        $oldHash = self::contentHash($composer);
+        $lock = self::lockWithHash($oldHash);
+        $root = $this->fixture(['composer.json' => $composer, 'composer.lock' => $lock] + self::defaultFiles());
+
+        $result = $this->runScript($root);
+
+        self::assertSame(0, $result['code'], $result['stderr']);
+        $newHash = self::contentHash((string) file_get_contents($root . '/composer.json'));
+        self::assertNotSame($oldHash, $newHash);
+        self::assertSame(self::lockWithHash($newHash), (string) file_get_contents($root . '/composer.lock'));
+        self::assertSame(
+            ['alterado: composer.json', 'alterado: composer.lock'],
+            array_values(array_filter(
+                self::outputLines($result['stdout']),
+                static fn (string $l): bool => str_starts_with($l, 'alterado: composer.')
+            ))
+        );
+    }
+
+    public function testLockStaysWhenTheHashDoesNotChange(): void
+    {
+        // description não entra no content-hash: o composer.json muda, o hash não.
+        $composer = json_encode([
+            'description' => 'Skeleton',
+            'require' => ['php' => '>=8.3'],
+            'scripts' => ['post-create-project-cmd' => ['@php tools/skeleton-post-create.php']],
+        ], self::JSON_FLAGS) . "\n";
+        $lock = self::lockWithHash(self::contentHash($composer));
+        $root = $this->fixture(['composer.json' => $composer, 'composer.lock' => $lock] + self::defaultFiles());
+
+        $result = $this->runScript($root);
+
+        self::assertSame(0, $result['code'], $result['stderr']);
+        self::assertSame($lock, (string) file_get_contents($root . '/composer.lock'));
+        self::assertContains('alterado: composer.json', self::outputLines($result['stdout']));
+        self::assertStringNotContainsString('composer.lock', $result['stdout']);
+    }
+
+    public function testMissingLockIsIgnored(): void
+    {
+        $root = $this->fixture(self::defaultFiles());
+
+        $result = $this->runScript($root);
+
+        self::assertSame(0, $result['code'], $result['stderr']);
+        self::assertFileDoesNotExist($root . '/composer.lock');
+        self::assertStringNotContainsString('composer.lock', $result['stdout']);
+        self::assertStringNotContainsString('composer.lock', $result['stderr']);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function brokenLocks(): iterable
+    {
+        yield 'JSON inválido' => ["{\n    \"content-hash\": \"abc\",\n"];
+        yield 'sem content-hash' => ["{\n    \"packages\": []\n}\n"];
+        yield 'content-hash não é texto' => ["{\n    \"content-hash\": 123,\n    \"packages\": []\n}\n"];
+    }
+
+    #[DataProvider('brokenLocks')]
+    public function testBrokenLockFailsBeforeChangingAnyFile(string $lock): void
+    {
+        $root = $this->fixture(['composer.lock' => $lock] + self::defaultFiles() + [
+            'docs/manutencao-do-skeleton.md' => "# Manutenção\n",
+        ]);
+        $before = Skeleton::snapshot($root);
+
+        $result = $this->runScript($root);
+
+        self::assertSame(1, $result['code'], $result['stdout']);
+        self::assertNotSame('', trim($result['stderr']));
+        self::assertSame($before, Skeleton::snapshot($root), 'nenhum arquivo pode ser alterado');
     }
 
     public function testRemovesItselfAndTheToolsFolderWhenEmpty(): void

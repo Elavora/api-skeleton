@@ -166,26 +166,130 @@ function skeletonReadComposer(string $path): stdClass
 }
 
 /**
+ * Lê o composer.lock, se existir.
+ *
+ * @return array{content: string, hash: string}|null
+ */
+function skeletonReadLock(string $path): ?array
+{
+    if (!file_exists($path)) {
+        return null;
+    }
+    $content = file_get_contents($path);
+    if ($content === false) {
+        throw new SkeletonCleanupFailure("não foi possível ler {$path}");
+    }
+    try {
+        $lock = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+    } catch (JsonException $exception) {
+        throw new SkeletonCleanupFailure("{$path} não é um JSON válido: " . $exception->getMessage());
+    }
+    if (!is_array($lock) || !isset($lock['content-hash']) || !is_string($lock['content-hash'])) {
+        throw new SkeletonCleanupFailure("{$path} não tem a chave content-hash como texto");
+    }
+
+    return ['content' => $content, 'hash' => $lock['content-hash']];
+}
+
+/**
+ * Remove name, description e scripts.post-create-project-cmd.
+ *
+ * @param resource $stdout
+ * @return string|null o composer.json novo, ou null quando nenhuma chave saiu
+ */
+function skeletonCleanComposer(string $root, stdClass $composer, $stdout): ?string
+{
+    $changed = false;
+    foreach (['name', 'description'] as $key) {
+        if (property_exists($composer, $key)) {
+            unset($composer->{$key});
+            $changed = true;
+        }
+    }
+
+    $scripts = $composer->scripts ?? null;
+    if ($scripts instanceof stdClass && property_exists($scripts, 'post-create-project-cmd')) {
+        unset($scripts->{'post-create-project-cmd'});
+        if (get_object_vars($scripts) === []) {
+            unset($composer->scripts);
+        }
+        $changed = true;
+    }
+
+    if (!$changed) {
+        return null;
+    }
+
+    try {
+        $json = json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+    } catch (JsonException $exception) {
+        throw new SkeletonCleanupFailure('não foi possível gerar o composer.json: ' . $exception->getMessage());
+    }
+    skeletonWriteFile($root . '/composer.json', $json);
+    skeletonWrite($stdout, 'alterado: composer.json');
+
+    return $json;
+}
+
+/** Mesmo algoritmo do Locker::getContentHash do Composer 2. */
+function skeletonContentHash(string $composerJson): string
+{
+    try {
+        $composer = json_decode($composerJson, true, 512, JSON_THROW_ON_ERROR);
+    } catch (JsonException $exception) {
+        throw new SkeletonCleanupFailure('composer.json novo inválido: ' . $exception->getMessage());
+    }
+    if (!is_array($composer)) {
+        throw new SkeletonCleanupFailure('composer.json novo não é um objeto JSON');
+    }
+
+    $relevantKeys = [
+        'name', 'version', 'require', 'require-dev', 'conflict', 'replace', 'provide',
+        'minimum-stability', 'prefer-stable', 'repositories', 'extra',
+    ];
+    $data = array_intersect_key($composer, array_flip($relevantKeys));
+    if (is_array($composer['config'] ?? null) && isset($composer['config']['platform'])) {
+        $data['config'] = ['platform' => $composer['config']['platform']];
+    }
+    ksort($data);
+
+    try {
+        return md5(json_encode($data, JSON_THROW_ON_ERROR));
+    } catch (JsonException $exception) {
+        throw new SkeletonCleanupFailure('não foi possível calcular o content-hash: ' . $exception->getMessage());
+    }
+}
+
+/**
+ * Troca só o valor do content-hash do composer.lock, preservando o resto byte a byte.
+ *
+ * @param array{content: string, hash: string}|null $lock
  * @param resource $stdout
  */
-function skeletonCleanComposer(string $root, stdClass $composer, $stdout): void
+function skeletonUpdateLock(string $root, ?array $lock, ?string $composerJson, $stdout): void
 {
-    $scripts = $composer->scripts ?? null;
-    if (!$scripts instanceof stdClass || !property_exists($scripts, 'post-create-project-cmd')) {
+    if ($lock === null || $composerJson === null) {
+        return;
+    }
+    $newHash = skeletonContentHash($composerJson);
+    if ($newHash === $lock['hash']) {
         return;
     }
 
-    unset($scripts->{'post-create-project-cmd'});
-    if (get_object_vars($scripts) === []) {
-        unset($composer->scripts);
+    $count = 0;
+    $updated = preg_replace_callback(
+        '~("content-hash"\s*:\s*")' . preg_quote($lock['hash'], '~') . '"~',
+        static fn(array $match): string => $match[1] . $newHash . '"',
+        $lock['content'],
+        1,
+        $count,
+    );
+    if ($updated === null || $count !== 1) {
+        throw new SkeletonCleanupFailure('content-hash não encontrado no texto do composer.lock');
     }
 
-    $json = json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    if ($json === false) {
-        throw new SkeletonCleanupFailure('não foi possível gerar o composer.json: ' . json_last_error_msg());
-    }
-    skeletonWriteFile($root . '/composer.json', $json . "\n");
-    skeletonWrite($stdout, 'alterado: composer.json');
+    skeletonWriteFile($root . '/composer.lock', $updated);
+    skeletonWrite($stdout, 'alterado: composer.lock');
 }
 
 /**
@@ -195,8 +299,9 @@ function skeletonCleanComposer(string $root, stdClass $composer, $stdout): void
 function skeletonCleanup(string $root, string $self, $stdout, $stderr): int
 {
     try {
-        // Valida o composer.json antes de mexer em qualquer arquivo.
+        // Valida o composer.json e o composer.lock antes de mexer em qualquer arquivo.
         $composer = skeletonReadComposer($root . '/composer.json');
+        $lock = skeletonReadLock($root . '/composer.lock');
 
         foreach (SKELETON_ONLY as $relative) {
             if ($relative === SELF_PATH) {
@@ -209,7 +314,8 @@ function skeletonCleanup(string $root, string $self, $stdout, $stderr): int
 
         skeletonCleanMarkedFile($root, 'README.md', '<!-- skeleton:inicio -->', '<!-- skeleton:fim -->', $stdout, $stderr);
         skeletonCleanMarkedFile($root, '.gitattributes', '# skeleton:inicio', '# skeleton:fim', $stdout, $stderr);
-        skeletonCleanComposer($root, $composer, $stdout);
+        $composerJson = skeletonCleanComposer($root, $composer, $stdout);
+        skeletonUpdateLock($root, $lock, $composerJson, $stdout);
 
         if (skeletonRemovePath($self)) {
             skeletonWrite($stdout, 'removido: ' . SELF_PATH);
