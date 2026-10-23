@@ -69,7 +69,7 @@ final class DockerfileTest extends TestCase
     {
         self::assertTrue(
             self::dockerfileNeedsNoGit(self::dockerfile()),
-            'O Dockerfile não pode citar git (em nenhuma caixa) nem .composer-install-deps.'
+            'O Dockerfile não pode citar git (em nenhuma caixa) nem .composer-install-deps.',
         );
     }
 
