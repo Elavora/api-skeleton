@@ -88,30 +88,12 @@ docker run --rm --pull always --mount "type=bind,source=$($PWD.Path),target=/wor
 
 ## O que acontece num pull request
 
-O check principal aparece no PR como **`quality / Qualidade PHP`**. Ele vem do workflow reutilizável
-`php-quality.yml` do `Elavora/.github`, na versão fixada no `quality.yml`:
-
-1. **Formatação.** Roda o PHP-CS-Fixer com a configuração do `elavora/code-standards`. Se algum arquivo estava fora
-   do padrão, commita a correção na branch do PR, com a mensagem `style: organiza o código`. Dê `git pull` antes do
-   próximo push.
-2. **Estilo e análise.** Confere o `.editorconfig` (editorconfig-checker) e roda `composer lint`,
-   `composer analyse` (PHPStan) e `composer audit`. O `composer audit` aponta dependências com falhas de segurança
-   conhecidas.
-3. **Testes.** Roda `composer test` com as dependências nas versões mínimas permitidas pelo `composer.json` e mede
-   a cobertura, com meta de 80%. Abaixo disso, o resultado aparece no comentário, mas não reprova.
-4. **Comentário no PR.** Um comentário fixo, atualizado a cada execução, diz "testes rodaram ok" ou
-   "testes com erro", com o resultado de cada etapa.
-
-A cobertura mede as pastas listadas em `<source>` no `phpunit.xml`. Sem `<source>`, a etapa de testes falha. Ao
-criar código fora de `app/`, acrescente a pasta nova ali.
+O check **`quality / Qualidade PHP`** vem do pipeline central do `Elavora/.github`: formata o código, roda lint,
+análise, testes com cobertura e `composer audit`, e comenta o resultado no PR. O que cada etapa faz está em
+[qualidade.md](https://github.com/Elavora/.github/blob/main/docs/qualidade.md).
 
 O `quality.yml` também tem um job do próprio projeto, **`Imagem Docker`**. Ele sobe a API com
 `docker compose up --build` e confere que `/health` e `/health/show` respondem `{"status":"ok"}`.
-
-Em três casos o CI não commita a formatação, só avisa: PR do Dependabot, push na `main` e PR vindo de fork.
-
-PR de fork falha logo no início. O GitHub não entrega a ele o token OIDC que o pipeline central usa para descobrir
-a própria versão. Os repositórios da Elavora trabalham com branches internas.
 
 O CI avisa, mas não bloqueia o merge. Para exigir que ele passe, configure uma regra de proteção da `main` no GitHub
 com o check `quality / Qualidade PHP`.
@@ -220,12 +202,8 @@ O padrão de commits da Elavora é o Conventional Commits, com a descrição em 
 
 ## Release do seu projeto
 
-O projeto criado não herda o release automático da Elavora (tags por labels, betas e Packagist). Esse fluxo existe
-para os pacotes da organização.
-
-Se o seu projeto precisar de versões, escolha o processo que fizer sentido para ele. O fluxo da Elavora está
-descrito em [Elavora/.github](https://github.com/Elavora/.github/blob/main/docs/release.md), caso queira tomá-lo como
-base.
+O projeto não herda o release automático da Elavora; se quiser um processo parecido, veja o
+[fluxo de release do Elavora/.github](https://github.com/Elavora/.github/blob/main/docs/release.md).
 
 ---
 

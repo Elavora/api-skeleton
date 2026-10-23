@@ -39,7 +39,7 @@ final class DeliveredReferencesTest extends TestCase
     /** @return iterable<string, array{string}> */
     public static function deliveredDocs(): iterable
     {
-        foreach (['README.md', 'docs/USO.md', 'docs/ambiente-e-ci.md', 'docs/MIGRACAO-BOOTSTRAP.md'] as $file) {
+        foreach (['README.md', 'docs/USO.md', 'docs/ambiente-e-ci.md'] as $file) {
             yield $file => [$file];
         }
     }
@@ -55,6 +55,24 @@ final class DeliveredReferencesTest extends TestCase
         self::assertStringNotContainsString('8.3-0.', $content);
         self::assertDoesNotMatchRegularExpression('~(?<![0-9a-fA-F])[0-9a-fA-F]{40}(?![0-9a-fA-F])~', $content);
         self::assertStringNotContainsString('manutencao-do-skeleton.md', $content);
+        self::assertStringNotContainsString('MIGRACAO-BOOTSTRAP', $content);
+    }
+
+    public function testNoDeliveredFileCitesTheMigrationGuide(): void
+    {
+        $files = Skeleton::deliveredTextFiles();
+        self::assertNotContains('docs/MIGRACAO-BOOTSTRAP.md', $files);
+
+        foreach ($files as $file) {
+            $content = Skeleton::read($file);
+            if ($file === 'README.md') {
+                $content = Skeleton::withoutMarkedBlock($content, Skeleton::README_START, Skeleton::README_END);
+            }
+            if ($file === '.gitattributes') {
+                $content = Skeleton::withoutMarkedBlock($content, Skeleton::ATTRIBUTES_START, Skeleton::ATTRIBUTES_END);
+            }
+            self::assertStringNotContainsString('MIGRACAO-BOOTSTRAP', $content, $file);
+        }
     }
 
     public function testReadmeHasExactlyOneSkeletonBlock(): void

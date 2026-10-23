@@ -39,7 +39,7 @@ grupos:
 | Grupo | Exemplos | Vai para o projeto criado? |
 | --- | --- | --- |
 | **Entrega** | `app/`, `core/`, `tests/`, `.devcontainer/`, `.github/workflows/quality.yml`, `.github/dependabot.yml`, `.editorconfig`, `.php-cs-fixer.dist.php`, `phpunit.xml`, `docs/USO.md`, `docs/ambiente-e-ci.md` | sim, e passa a ser do projeto |
-| **Só do skeleton** | `.github/workflows/skeleton-*.yml`, `tests-skeleton/`, esta página, o script de limpeza | não, é removido na criação |
+| **Só do skeleton** | `.github/workflows/skeleton-*.yml`, `tests-skeleton/`, esta página, `docs/MIGRACAO-BOOTSTRAP.md`, o script de limpeza | não, é removido na criação |
 
 A explicação da entrega para quem usa o projeto está em [Ambiente de desenvolvimento e CI](ambiente-e-ci.md). Lá
 está a tabela do que fica congelado e de como cada item se atualiza.
@@ -464,11 +464,16 @@ template de PR: o da organização vale para os repositórios dela.
 | `.github/workflows/skeleton-release.yml` | arquivo | release por labels e Packagist |
 | `.github/workflows/skeleton-sync-labels.yml` | arquivo | sincronização de labels |
 | `.github/workflows/skeleton-tests.yml` | arquivo | testes da entrega, perfis e actionlint |
+| `docs/MIGRACAO-BOOTSTRAP.md` | arquivo | guia de migração para projetos da estrutura 1.0 |
 | `docs/manutencao-do-skeleton.md` | arquivo | esta página |
 | `tests-skeleton/` | pasta | testes da entrega |
 | `tools/skeleton-post-create.php` | arquivo | script de limpeza (apaga a si mesmo por último) |
 
 Essa lista, nessa ordem, é a constante `SKELETON_ONLY` do script.
+
+O guia de migração é só do skeleton porque um projeto criado a partir de agora já nasce com o bootstrap
+compartilhado. Para ele, o guia seria um arquivo a mais, congelado e sem uso. Quem precisa dele tem um projeto antigo
+e o lê no repositório do skeleton, pelo bloco "Só no repositório do skeleton" do `README.md`.
 
 ### `.gitattributes`
 
@@ -479,6 +484,7 @@ O arquivo ganha, no fim, um bloco delimitado por duas linhas exatas:
 /.github/workflows/skeleton-release.yml export-ignore
 /.github/workflows/skeleton-sync-labels.yml export-ignore
 /.github/workflows/skeleton-tests.yml export-ignore
+/docs/MIGRACAO-BOOTSTRAP.md export-ignore
 /docs/manutencao-do-skeleton.md export-ignore
 /tests-skeleton export-ignore
 # skeleton:fim
@@ -633,9 +639,10 @@ Todas as checagens de referências seguem
   - os arquivos da entrega continuam iguais.
 
   Também os casos de marcadores incompletos e de caminhos já ausentes.
-- A documentação entregue (`README.md` fora do bloco do skeleton, `docs/USO.md`, `docs/ambiente-e-ci.md` e
-  `docs/MIGRACAO-BOOTSTRAP.md`) não cita `8.3-0.`, nenhuma sequência de 40 caracteres hexadecimais nem
-  `manutencao-do-skeleton.md`.
+- A documentação entregue (`README.md` fora do bloco do skeleton, `docs/USO.md` e `docs/ambiente-e-ci.md`) não cita
+  `8.3-0.`, nenhuma sequência de 40 caracteres hexadecimais, `manutencao-do-skeleton.md` nem `MIGRACAO-BOOTSTRAP`.
+  Nenhum arquivo entregue cita `MIGRACAO-BOOTSTRAP`. Ficam de fora só os arquivos só do skeleton e os blocos do
+  skeleton no `README.md` e no `.gitattributes`, que o script remove na criação do projeto.
 - O `quality.yml` não tem `image` nem `php-dev`.
 
 ---

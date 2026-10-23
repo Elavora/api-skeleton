@@ -4,7 +4,7 @@
 
 Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
 
-## Instalacao
+## Instalação
 
 ```bash
 composer create-project elavora/api-skeleton minha-api
@@ -19,13 +19,13 @@ Requisitos:
 - `elavora/api-framework` `^2.0`
 - Docker Compose 2.24 ou mais recente
 
-O projeto versiona `composer.lock`. Instalacoes, CI e o Dockerfile usam
-`composer install`, portanto reproduzem as mesmas versoes.
+O projeto versiona `composer.lock`. Instalações, CI e o Dockerfile usam
+`composer install`, portanto reproduzem as mesmas versões.
 
 ## Ambiente do Compose
 
-O servico `api` carrega `.env` por `env_file`. O arquivo e opcional: sem ele, o
-bootstrap usa seus valores padrao. O Compose ainda usa `APP_PORT` para publicar
+O serviço `api` carrega `.env` por `env_file`. O arquivo é opcional: sem ele, o
+bootstrap usa seus valores padrão. O Compose ainda usa `APP_PORT` para publicar
 a porta, e os blocos `environment` dos overlays prevalecem sobre o arquivo.
 
 Exemplo:
@@ -37,9 +37,9 @@ LOG_DRIVER=stdout
 ```
 
 Instale `elavora/api-log-stdout` antes de selecionar esse driver. O `.env`
-permanece em `.gitignore` e `.dockerignore`, e nunca e copiado para a imagem.
+permanece em `.gitignore` e `.dockerignore`, e nunca é copiado para a imagem.
 
-Em automacao, `ELAVORA_ENV_FILE` pode apontar para outro arquivo:
+Em automação, `ELAVORA_ENV_FILE` pode apontar para outro arquivo:
 
 ```bash
 ELAVORA_ENV_FILE=/tmp/api-smoke.env docker compose --env-file /tmp/api-smoke.env config
@@ -47,16 +47,16 @@ ELAVORA_ENV_FILE=/tmp/api-smoke.env docker compose --env-file /tmp/api-smoke.env
 
 ## Fluxo HTTP
 
-Com o servico iniciado:
+Com o serviço iniciado:
 
 ```bash
 curl --fail http://localhost:8080/health
 curl --fail http://localhost:8080/health/show
 ```
 
-Ambas as rotas respondem `{"status":"ok"}`. `/health` e um alias explicito;
-`/health/show` usa a convencao do framework e exige `#[Action]` em uma action
-publica de instancia.
+Ambas as rotas respondem `{"status":"ok"}`. `/health` é um alias explícito;
+`/health/show` usa a convenção do framework e exige `#[Action]` em uma action
+pública de instância.
 
 ## Qualidade
 
@@ -71,12 +71,12 @@ docker build -t api-skeleton .
 ```
 
 O lint cobre `app/`, `core/`, `public/`, `tests/` e `worker.php` sem depender de
-`find`, `xargs` ou Bash. O PHPStan roda no nivel 8 sem baseline. O entrypoint
-opcional de worker fica fora da analise estatica enquanto
-`elavora/api-queue-worker` nao estiver instalado, mas permanece coberto pelo
+`find`, `xargs` ou Bash. O PHPStan roda no nível 8 sem baseline. O entrypoint
+opcional de worker fica fora da análise estática enquanto
+`elavora/api-queue-worker` não estiver instalado, mas permanece coberto pelo
 lint.
 
-Ao mudar dependencias, atualize e revise o lock deliberadamente. Builds e
+Ao mudar dependências, atualize e revise o lock deliberadamente. Builds e
 pipelines devem continuar usando `composer install`, nunca `composer update`.
 
 ---
