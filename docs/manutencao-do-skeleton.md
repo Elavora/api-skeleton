@@ -270,7 +270,82 @@ O pipeline central mede a cobertura com `XDEBUG_MODE=coverage composer test -- -
 Sem `<source>`, o PHPUnit avisa que não há filtro de cobertura. Com `failOnWarning="true"`, esse aviso reprova a
 etapa de testes.
 
-O `phpunit.xml` atual já atende: ele inclui `app/Attributes`, `app/DataTypes` e `app/Http`. Esta tarefa não o muda.
+O `<source>` fica exatamente assim:
+
+```xml
+<source>
+    <include>
+        <directory>app</directory>
+    </include>
+    <exclude>
+        <directory>app/Worker</directory>
+    </exclude>
+</source>
+```
+
+- `<include>` tem um único `<directory>`, `app`. Ele cobre o código que o projeto criar em qualquer pasta de `app/`.
+  Listar pastas uma a uma quebraria quando uma delas ficasse vazia.
+- `<exclude>` tem um único `<directory>`, `app/Worker`. O `tasks.php` usa o `elavora/api-queue-worker`, que não vem
+  instalado, e nenhum teste o executa. É o mesmo motivo de o PHPStan ignorar `app/Worker`. Sem essa exclusão, a
+  cobertura do projeto recém-criado ficaria abaixo da meta de 80%.
+- O resto do `phpunit.xml` não muda.
+
+### `app/` e `tests/`
+
+O skeleton não entrega código de exemplo. Um exemplo copiado para o projeto vira código do projeto, que alguém
+precisa apagar à mão. Fica só o que o projeto usa de verdade.
+
+A checagem de saúde **não** é exemplo. O job `Imagem Docker` do `quality.yml` sobe a API e confere `/health` e
+`/health/show`. Por isso o `HealthController`, o `HttpRoutes` e os testes dessas rotas ficam.
+
+Conteúdo de `app/` depois desta mudança (nada além disto):
+
+| Caminho | Conteúdo |
+| --- | --- |
+| `app/Attributes/.gitkeep` | vazio |
+| `app/Contracts/.gitkeep` | vazio |
+| `app/DataTypes/.gitkeep` | vazio |
+| `app/Enums/.gitkeep` | vazio |
+| `app/Http/Controller/HealthController.php` | sem mudança |
+| `app/Http/HttpRoutes.php` | sem mudança: registra `GET /health` para `HealthController::show` |
+| `app/Integrations/.gitkeep` | vazio |
+| `app/Repositories/.gitkeep` | vazio |
+| `app/Services/.gitkeep` | vazio |
+| `app/Support/.gitkeep` | vazio |
+| `app/Worker/tasks.php` | registro de tarefas vazio (abaixo) |
+
+O `app/Worker/tasks.php` fica exatamente assim:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Elavora\Api\Extension\QueueWorker\TaskRegistry;
+
+// Registre aqui as tarefas da fila: o nome gravado na fila e o handler que a executa.
+// Prefira nomes pesquisaveis e estaveis, como documents.process ou email.send.
+return new TaskRegistry();
+```
+
+O `worker.php` não muda. Ele continua carregando o `tasks.php`.
+
+Saem estes arquivos:
+
+| Arquivo | Por quê |
+| --- | --- |
+| `app/Attributes/Permission.php` | exemplo de attribute |
+| `app/DataTypes/ProjectCode.php` | exemplo de DataType |
+| `app/Worker/ExampleTaskHandler.php` | exemplo de handler de fila |
+| `tests/GuideExamplesTest.php` | testa só `Permission` e `ProjectCode` |
+| `tests/ResponseableDataTypeTest.php` | testa só `ProjectCode` |
+
+Os outros testes de `tests/` ficam, sem mudança. O `HealthEndpointTest` e o `ConventionRouteTest` cobrem `/health` e
+`/health/show`.
+
+Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) cita `Permission.php`,
+`ProjectCode`, `ExampleTaskHandler`, `example.ping` ou `Exemplos didaticos`. O README troca a seção
+"Exemplos didaticos" por "O que já vem em `app/`".
 
 ### Regras de estilo
 
@@ -615,8 +690,10 @@ Todas as checagens de referências seguem
   - chamador e job `imagem` do `quality.yml`, e os textos proibidos;
   - `dependabot.yml`, com só os itens `composer` e `github-actions`;
   - stub do PHP-CS-Fixer, estrutura do `.editorconfig` e linhas do `.gitignore`;
-  - `<source>` do `phpunit.xml`;
-  - ausência dos workflows removidos.
+  - `<source>` do `phpunit.xml`: só `app` no `<include>` e só `app/Worker` no `<exclude>`;
+  - ausência dos workflows removidos;
+  - conteúdo de `app/` igual à tabela de [`app/` e `tests/`](#app-e-tests), o `tasks.php` exato, a ausência dos
+    arquivos de exemplo e de seus testes, e nenhuma citação aos exemplos nos arquivos entregues.
 - O `composer.json`: `elavora/api-framework` com restrição que começa com `^2.`, sem `dev-` nem chave
   `repositories`; `elavora/code-standards` em `require-dev`, com restrição que começa com `^1.`; os callbacks
   `Elavora\CodeStandards\Composer::sync`; e o `post-create-project-cmd`.

@@ -57,14 +57,14 @@ final class StyleFilesTest extends TestCase
         $xml = simplexml_load_string(Skeleton::read('phpunit.xml'));
         self::assertNotFalse($xml);
 
-        $directories = $xml->xpath('/phpunit/source/include/directory') ?: [];
-        self::assertNotEmpty($directories, 'phpunit.xml precisa de <source><include> com <directory>');
-        foreach ($directories as $directory) {
-            $value = trim((string) $directory);
-            self::assertTrue(
-                $value === 'app' || str_starts_with($value, 'app/'),
-                "<directory> de <source> deve ser app ou app/...: {$value}",
-            );
-        }
-    }
+        $values = static fn (array $nodes): array => array_map(
+            static fn ($node): string => trim((string) $node),
+            $nodes,
+        );
+
+        self::assertSame(['app'], $values($xml->xpath('/phpunit/source/include/directory') ?: []));
+        self::assertSame(['app/Worker'], $values($xml->xpath('/phpunit/source/exclude/directory') ?: []));
+        self::assertCount(1, $xml->xpath('/phpunit/source/include/*') ?: [], 'só um item no <include>');
+        self::assertCount(1, $xml->xpath('/phpunit/source/exclude/*') ?: [], 'só um item no <exclude>');
+        self::assertCount(2, $xml->xpath('/phpunit/source/*') ?: [], '<source> tem só <include> e <exclude>');    }
 }

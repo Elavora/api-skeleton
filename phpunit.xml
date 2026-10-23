@@ -2,10 +2,11 @@
 <phpunit bootstrap="tests/bootstrap.php" colors="true" failOnWarning="true">
     <source>
         <include>
-            <directory>app/Attributes</directory>
-            <directory>app/DataTypes</directory>
-            <directory>app/Http</directory>
+            <directory>app</directory>
         </include>
+        <exclude>
+            <directory>app/Worker</directory>
+        </exclude>
     </source>
     <testsuites>
         <testsuite name="Elavora API Skeleton">
