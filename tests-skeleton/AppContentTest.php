@@ -32,7 +32,7 @@ final class AppContentTest extends TestCase
         $root = Skeleton::path('app');
         $files = [];
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS)
+            new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS),
         );
         foreach ($iterator as $file) {
             if ($file->isFile()) {

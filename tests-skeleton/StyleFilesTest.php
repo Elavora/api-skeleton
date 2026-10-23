@@ -57,8 +57,8 @@ final class StyleFilesTest extends TestCase
         $xml = simplexml_load_string(Skeleton::read('phpunit.xml'));
         self::assertNotFalse($xml);
 
-        $values = static fn (array $nodes): array => array_map(
-            static fn ($node): string => trim((string) $node),
+        $values = static fn(array $nodes): array => array_map(
+            static fn($node): string => trim((string) $node),
             $nodes,
         );
 
@@ -66,5 +66,6 @@ final class StyleFilesTest extends TestCase
         self::assertSame(['app/Worker'], $values($xml->xpath('/phpunit/source/exclude/directory') ?: []));
         self::assertCount(1, $xml->xpath('/phpunit/source/include/*') ?: [], 'só um item no <include>');
         self::assertCount(1, $xml->xpath('/phpunit/source/exclude/*') ?: [], 'só um item no <exclude>');
-        self::assertCount(2, $xml->xpath('/phpunit/source/*') ?: [], '<source> tem só <include> e <exclude>');    }
+        self::assertCount(2, $xml->xpath('/phpunit/source/*') ?: [], '<source> tem só <include> e <exclude>');
+    }
 }

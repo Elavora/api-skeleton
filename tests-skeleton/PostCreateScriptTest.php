@@ -104,7 +104,7 @@ final class PostCreateScriptTest extends TestCase
             '${1}' . $new . '"',
             $lock,
             1,
-            $count
+            $count,
         );
         self::assertSame(1, $count, 'content-hash não encontrado no lock');
 
@@ -121,7 +121,7 @@ final class PostCreateScriptTest extends TestCase
     /** @return list<string> */
     private static function outputLines(string $stdout): array
     {
-        return array_values(array_filter(array_map('trim', explode("\n", $stdout)), static fn (string $l): bool => $l !== ''));
+        return array_values(array_filter(array_map('trim', explode("\n", $stdout)), static fn(string $l): bool => $l !== ''));
     }
 
     private static function readmeWithBlock(string $eol = "\n"): string
@@ -231,7 +231,7 @@ final class PostCreateScriptTest extends TestCase
         self::assertCount(11, $lines, "uma linha por item removido ou alterado:\n" . $result['stdout']);
         self::assertSame(
             ['alterado: composer.json', 'alterado: composer.lock'],
-            array_values(array_filter($lines, static fn (string $l): bool => str_starts_with($l, 'alterado: composer.'))),
+            array_values(array_filter($lines, static fn(string $l): bool => str_starts_with($l, 'alterado: composer.'))),
         );
 
         self::assertSame($decoyBefore, Skeleton::snapshot($decoy), 'o script não pode mexer no diretório atual');
@@ -502,8 +502,8 @@ final class PostCreateScriptTest extends TestCase
             ['alterado: composer.json', 'alterado: composer.lock'],
             array_values(array_filter(
                 self::outputLines($result['stdout']),
-                static fn (string $l): bool => str_starts_with($l, 'alterado: composer.')
-            ))
+                static fn(string $l): bool => str_starts_with($l, 'alterado: composer.'),
+            )),
         );
     }
 
