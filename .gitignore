@@ -3,3 +3,5 @@
 .phpunit.cache/
 coverage/
 vendor/
+/.elavora/
+/.php-cs-fixer.php

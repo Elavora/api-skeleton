@@ -25,7 +25,7 @@ final class ProjectConfigurationTest extends TestCase
         $copyDependencies = strpos($dockerfile, 'COPY composer.json composer.lock ./');
         $install = strpos(
             $dockerfile,
-            'RUN composer install --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader'
+            'RUN composer install --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader',
         );
         $copyApplication = strpos($dockerfile, 'COPY . .');
 

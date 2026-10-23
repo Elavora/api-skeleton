@@ -1,0 +1,148 @@
+name: Testes do skeleton
+
+# Só do repositório Elavora/api-skeleton: removido na criação do projeto.
+# Especificação: docs/manutencao-do-skeleton.md, "Testes da entrega".
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  entrega:
+    name: Entrega
+    if: github.repository == 'Elavora/api-skeleton'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Como root: o workspace do runner pertence a outro UID.
+    container:
+      image: ghcr.io/elavora/php-dev:8.3-latest
+      options: --user root
+    env:
+      COMPOSER_ALLOW_SUPERUSER: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Instalar as dependências
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Rodar os testes da entrega
+        run: vendor/bin/phpunit -c tests-skeleton/phpunit.xml --exclude-group docker
+
+  build-producao:
+    name: Build de produção
+    if: github.repository == 'Elavora/api-skeleton'
+    # O runner já tem Docker, PHP e Composer.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Instalar as dependências
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Conferir o build de produção
+        run: vendor/bin/phpunit -c tests-skeleton/phpunit.xml --group docker
+
+  perfis:
+    name: Perfil (${{ matrix.profile }})
+    if: github.repository == 'Elavora/api-skeleton'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      # O framework vem do composer.lock. Os perfis apcu, redis, mysql e postgresql voltam quando os
+      # pacotes deles aceitarem o elavora/api-framework 2 (docs/manutencao-do-skeleton.md, "Riscos e pendências").
+      matrix:
+        include:
+          - profile: base
+            compose_files: -f docker-compose.yml
+            expected_extension: ""
+            expected_classes: Elavora\Api\Framework\Application
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Validar o perfil
+        env:
+          COMPOSE_FILES: ${{ matrix.compose_files }}
+          EXPECTED_CLASSES: ${{ matrix.expected_classes }}
+          EXPECTED_EXTENSION: ${{ matrix.expected_extension }}
+          PROFILE: ${{ matrix.profile }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          read -r -a compose_files <<< "$COMPOSE_FILES"
+          cleanup() {
+            docker compose "${compose_files[@]}" down --volumes --remove-orphans
+          }
+          trap cleanup EXIT
+
+          docker compose "${compose_files[@]}" up --build --detach
+
+          port="$(docker compose "${compose_files[@]}" port api 8080 | awk -F: '{print $NF}')"
+          if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+            echo "porta da API não encontrada: '${port}'" >&2
+            exit 1
+          fi
+
+          health=''
+          for _ in $(seq 1 20); do
+            if health="$(curl --fail --silent --show-error "http://127.0.0.1:${port}/health")"; then
+              break
+            fi
+            health=''
+            sleep 1
+          done
+
+          test "$health" = '{"status":"ok"}'
+          test "$(curl --fail --silent --show-error "http://127.0.0.1:${port}/health/show")" = '{"status":"ok"}'
+
+          if [[ -n "$EXPECTED_EXTENSION" ]]; then
+            docker compose "${compose_files[@]}" exec -T \
+              -e EXPECTED_EXTENSION="$EXPECTED_EXTENSION" api \
+              php -r 'exit(extension_loaded((string) getenv("EXPECTED_EXTENSION")) ? 0 : 1);'
+          fi
+
+          if [[ "$PROFILE" == "apcu" ]]; then
+            docker compose "${compose_files[@]}" exec -T api \
+              php -r 'exit(filter_var(ini_get("apc.enable_cli"), FILTER_VALIDATE_BOOLEAN) ? 0 : 1);'
+          fi
+
+          while IFS= read -r class; do
+            docker compose "${compose_files[@]}" exec -T \
+              -e EXPECTED_CLASS="$class" api \
+              php -r 'require "vendor/autoload.php"; exit(class_exists((string) getenv("EXPECTED_CLASS")) ? 0 : 1);'
+          done < <(tr ',' '\n' <<< "$EXPECTED_CLASSES")
+
+  actionlint:
+    name: actionlint
+    if: github.repository == 'Elavora/api-skeleton'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Validar os workflows
+        run: docker run --rm --mount "type=bind,source=${GITHUB_WORKSPACE},target=/repo,readonly" -w /repo rhysd/actionlint:1.7.12 -color

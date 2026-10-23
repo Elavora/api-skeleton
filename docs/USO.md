@@ -1,8 +1,10 @@
 # Guia de uso
 
+[README](../README.md) · Próximo: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)
+
 Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
 
-## Instalacao
+## Instalação
 
 ```bash
 composer create-project elavora/api-skeleton minha-api
@@ -14,16 +16,19 @@ docker compose up --build
 Requisitos:
 
 - PHP `>=8.3`
-- `elavora/api-framework` `^1.0`
+- `elavora/api-framework` `^2.0`
 - Docker Compose 2.24 ou mais recente
 
-O projeto versiona `composer.lock`. Instalacoes, CI e o Dockerfile usam
-`composer install`, portanto reproduzem as mesmas versoes.
+O projeto versiona `composer.lock`. Instalações, CI e o Dockerfile usam
+`composer install`, portanto reproduzem as mesmas versões.
+
+O `composer.json` do projeto criado vem sem `name` e sem `description`, que eram do pacote do skeleton. Preencha os
+dois se for publicar o projeto como pacote.
 
 ## Ambiente do Compose
 
-O servico `api` carrega `.env` por `env_file`. O arquivo e opcional: sem ele, o
-bootstrap usa seus valores padrao. O Compose ainda usa `APP_PORT` para publicar
+O serviço `api` carrega `.env` por `env_file`. O arquivo é opcional: sem ele, o
+bootstrap usa seus valores padrão. O Compose ainda usa `APP_PORT` para publicar
 a porta, e os blocos `environment` dos overlays prevalecem sobre o arquivo.
 
 Exemplo:
@@ -35,9 +40,9 @@ LOG_DRIVER=stdout
 ```
 
 Instale `elavora/api-log-stdout` antes de selecionar esse driver. O `.env`
-permanece em `.gitignore` e `.dockerignore`, e nunca e copiado para a imagem.
+permanece em `.gitignore` e `.dockerignore`, e nunca é copiado para a imagem.
 
-Em automacao, `ELAVORA_ENV_FILE` pode apontar para outro arquivo:
+Em automação, `ELAVORA_ENV_FILE` pode apontar para outro arquivo:
 
 ```bash
 ELAVORA_ENV_FILE=/tmp/api-smoke.env docker compose --env-file /tmp/api-smoke.env config
@@ -45,16 +50,32 @@ ELAVORA_ENV_FILE=/tmp/api-smoke.env docker compose --env-file /tmp/api-smoke.env
 
 ## Fluxo HTTP
 
-Com o servico iniciado:
+Com o serviço iniciado:
 
 ```bash
 curl --fail http://localhost:8080/health
 curl --fail http://localhost:8080/health/show
 ```
 
-Ambas as rotas respondem `{"status":"ok"}`. `/health` e um alias explicito;
-`/health/show` usa a convencao do framework e exige `#[Action]` em uma action
-publica de instancia.
+Ambas as rotas respondem `{"status":"ok"}`. `/health` é um alias explícito;
+`/health/show` usa a convenção do framework e exige `#[Action]` em uma action
+pública de instância.
+
+Essas duas rotas são a checagem de saúde do projeto, não um exemplo. O job `Imagem Docker` do CI depende delas.
+Mantenha o `HealthController` e o alias `/health` em `app/Http/HttpRoutes.php`.
+
+## Tarefas de fila
+
+O arquivo `app/Worker/tasks.php` devolve um `TaskRegistry` vazio. Para cada tarefa, crie um handler em `app/Worker/`
+que implemente `TaskHandler` e registre-o com `add`:
+
+```php
+return (new TaskRegistry())
+    ->add('email.send', new SendEmailHandler());
+```
+
+O nome (`email.send`) é o que fica gravado na fila. Prefira nomes estáveis e fáceis de pesquisar. O worker
+(`php worker.php`) exige o pacote `elavora/api-queue-worker`.
 
 ## Qualidade
 
@@ -68,11 +89,17 @@ composer check
 docker build -t api-skeleton .
 ```
 
-O lint cobre `app/`, `core/`, `public/`, `tests/` e `worker.php` sem depender de
-`find`, `xargs` ou Bash. O PHPStan roda no nivel 8 sem baseline. O entrypoint
-opcional de worker fica fora da analise estatica enquanto
-`elavora/api-queue-worker` nao estiver instalado, mas permanece coberto pelo
-lint.
+O `composer lint` roda o `elavora-standards lint`, do pacote `elavora/code-standards`. Ele roda `php -l` em todo
+arquivo `.php` do projeto, menos `vendor/` e arquivos e pastas que começam com ponto. Melhorias no lint chegam
+pelo PR do Dependabot que atualiza o pacote. Detalhes em
+[lint.md](https://github.com/Elavora/code-standards/blob/main/docs/lint.md).
 
-Ao mudar dependencias, atualize e revise o lock deliberadamente. Builds e
+O PHPStan roda no nível 8 sem baseline. O entrypoint opcional de worker fica fora da análise estática enquanto
+`elavora/api-queue-worker` não estiver instalado, mas o lint confere a sintaxe dele.
+
+Ao mudar dependências, atualize e revise o lock deliberadamente. Builds e
 pipelines devem continuar usando `composer install`, nunca `composer update`.
+
+---
+
+[README](../README.md) · Próximo: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)
