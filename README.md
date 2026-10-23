@@ -138,7 +138,7 @@ composer check
 docker build -t minha-api .
 ```
 
-`composer check` executa lint portátil, PHPStan nível 8 e PHPUnit. Atualize o
+`composer check` executa o lint de sintaxe (`elavora-standards lint`), o PHPStan nível 8 e o PHPUnit. Atualize o
 `composer.lock` deliberadamente ao mudar dependências; um `composer.json`
 incompatível com o lock faz a instalação e a validação falharem.
 

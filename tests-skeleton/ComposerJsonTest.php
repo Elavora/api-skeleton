@@ -54,9 +54,22 @@ final class ComposerJsonTest extends TestCase
         self::assertArrayNotHasKey('elavora/code-standards', $composer['require'] ?? []);
         $constraint = (string) $composer['require-dev']['elavora/code-standards'];
         self::assertTrue(
-            Skeleton::hasMajor($constraint, 1),
-            "elavora/code-standards deve começar com ^1. (recebido: {$constraint})",
+            Skeleton::hasMajorWithMinorAtLeast($constraint, 1, 1),
+            "elavora/code-standards deve começar com ^1. e minor 1 ou maior, que tem o lint (recebido: {$constraint})",
         );
+    }
+
+    public function testLintScriptIsTheCodeStandardsLint(): void
+    {
+        $scripts = self::composer()['scripts'] ?? [];
+
+        self::assertSame('elavora-standards lint', $scripts['lint'] ?? null);
+        self::assertContains('@lint', (array) ($scripts['check'] ?? []), 'o check continua chamando @lint');
+    }
+
+    public function testLocalLintScriptIsRemoved(): void
+    {
+        self::assertFileDoesNotExist(Skeleton::path('tools/lint.php'));
     }
 
     public function testPhpCsFixerIsNotADependency(): void

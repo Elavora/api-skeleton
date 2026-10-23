@@ -18,12 +18,12 @@
         }
     },
     "require-dev": {
-        "elavora/code-standards": "^1.0",
+        "elavora/code-standards": "^1.1",
         "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0"
     },
     "scripts": {
-        "lint": "@php tools/lint.php",
+        "lint": "elavora-standards lint",
         "test": "@php vendor/bin/phpunit -c phpunit.xml",
         "analyse": "@php vendor/bin/phpstan analyse --no-progress --memory-limit=1G",
         "check": [

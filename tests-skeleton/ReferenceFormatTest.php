@@ -75,9 +75,25 @@ final class ReferenceFormatTest extends TestCase
         yield 'framework ^3.0 (outro major)' => ['^3.0', 2, false];
         yield 'framework dev-main' => ['dev-main as 1.0.x-dev', 2, false];
         yield 'framework ^1.0' => ['^1.0', 2, false];
-        yield 'code-standards ^1.0' => ['^1.0', 1, true];
-        yield 'code-standards ^1.2' => ['^1.2', 1, true];
-        yield 'code-standards ^2.0' => ['^2.0', 1, false];
+    }
+
+    /** @return iterable<string, array{string, bool}> */
+    public static function codeStandardsConstraints(): iterable
+    {
+        yield '^1.1 (adoção)' => ['^1.1', true];
+        yield '^1.2 (Dependabot)' => ['^1.2', true];
+        yield '^1.10' => ['^1.10', true];
+        yield '^1.1.3' => ['^1.1.3', true];
+        yield '^1.0 (minor abaixo de 1, sem lint)' => ['^1.0', false];
+        yield '^1.0.5' => ['^1.0.5', false];
+        yield '^2.1 (outro major)' => ['^2.1', false];
+        yield 'dev-main' => ['dev-main', false];
+    }
+
+    #[DataProvider('codeStandardsConstraints')]
+    public function testCodeStandardsConstraintNeedsTheLintMinor(string $constraint, bool $valid): void
+    {
+        self::assertSame($valid, Skeleton::hasMajorWithMinorAtLeast($constraint, 1, 1));
     }
 
     #[DataProvider('constraints')]
