@@ -15,7 +15,7 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write
-    uses: Elavora/.github/.github/workflows/php-quality.yml@d96e9bb606f84016dd031ad748d009d820fd5487 # 1.3.0
+    uses: Elavora/.github/.github/workflows/php-quality.yml@2a6cd142f0cd3f1aac93b98d19f561d4f91e169e # 1.3.2
 
   imagem:
     name: Imagem Docker
