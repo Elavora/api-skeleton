@@ -5,7 +5,7 @@
     "license": "MIT",
     "require": {
         "php": ">=8.3",
-        "elavora/api-framework": "dev-main as 1.0.x-dev"
+        "elavora/api-framework": "^2.0"
     },
     "autoload": {
         "psr-4": {
@@ -18,17 +18,27 @@
         }
     },
     "require-dev": {
+        "elavora/code-standards": "^1.1",
         "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0"
     },
     "scripts": {
-        "lint": "@php tools/lint.php",
+        "lint": "elavora-standards lint",
         "test": "@php vendor/bin/phpunit -c phpunit.xml",
         "analyse": "@php vendor/bin/phpstan analyse --no-progress --memory-limit=1G",
         "check": [
             "@lint",
             "@test",
             "@analyse"
+        ],
+        "post-install-cmd": [
+            "Elavora\\CodeStandards\\Composer::sync"
+        ],
+        "post-update-cmd": [
+            "Elavora\\CodeStandards\\Composer::sync"
+        ],
+        "post-create-project-cmd": [
+            "@php tools/skeleton-post-create.php"
         ]
     },
     "config": {
@@ -36,10 +46,5 @@
         "sort-packages": true
     },
     "minimum-stability": "stable",
-    "prefer-stable": true,
-    "repositories": [{
-        "name": "api-framework",
-        "type": "git",
-        "url": "https://github.com/Elavora/api-framework.git"
-    }]
+    "prefer-stable": true
 }

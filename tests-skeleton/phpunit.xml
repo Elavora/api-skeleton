@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Testes do skeleton como produto (só do repositório Elavora/api-skeleton).
+    Como rodar: veja "Testes da entrega" em docs/manutencao-do-skeleton.md.
+-->
+<phpunit bootstrap="bootstrap.php" colors="true" failOnWarning="true">
+    <testsuites>
+        <testsuite name="Elavora API Skeleton - entrega">
+            <directory>.</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

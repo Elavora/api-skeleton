@@ -21,7 +21,7 @@ final class ApcuDockerConfigurationTest extends TestCase
         self::assertStringContainsString('docker-php-ext-enable apcu', $apcuBlock);
         self::assertStringContainsString(
             "printf '%s\\n' 'apc.enable_cli=1' > /usr/local/etc/php/conf.d/apcu-cli.ini",
-            $apcuBlock
+            $apcuBlock,
         );
     }
 

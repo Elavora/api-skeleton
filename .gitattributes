@@ -13,3 +13,12 @@
 *.sh text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+
+# skeleton:inicio
+/.github/workflows/skeleton-release.yml export-ignore
+/.github/workflows/skeleton-sync-labels.yml export-ignore
+/.github/workflows/skeleton-tests.yml export-ignore
+/docs/MIGRACAO-BOOTSTRAP.md export-ignore
+/docs/manutencao-do-skeleton.md export-ignore
+/tests-skeleton export-ignore
+# skeleton:fim
