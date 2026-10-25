@@ -18,12 +18,17 @@ final class Skeleton
 {
     public const DEV_IMAGE = 'ghcr.io/elavora/php-dev:8.3-latest';
 
-    /** Tabela "Arquivos só do skeleton", na ordem da documentação. */
+    /**
+     * Tabela "Arquivos só do skeleton", na ordem da documentação.
+     *
+     * @see docs/manutencao-do-skeleton.md#arquivos-só-do-skeleton
+     * @see docs/manutencao-do-skeleton.md#guia-de-migração-removido
+     * @var list<string>
+     */
     public const SKELETON_ONLY = [
         '.github/workflows/skeleton-release.yml',
         '.github/workflows/skeleton-sync-labels.yml',
         '.github/workflows/skeleton-tests.yml',
-        'docs/MIGRACAO-BOOTSTRAP.md',
         'docs/manutencao-do-skeleton.md',
         'tests-skeleton',
         'tools/skeleton-post-create.php',

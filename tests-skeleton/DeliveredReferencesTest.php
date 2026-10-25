@@ -44,6 +44,13 @@ final class DeliveredReferencesTest extends TestCase
         }
     }
 
+    /**
+     * A documentação entregue não cita `8.3-0.`, SHA de 40 hex nem `manutencao-do-skeleton.md`.
+     * O guia de migração foi apagado, então a citação a ele não é mais conferida.
+     *
+     * @see docs/manutencao-do-skeleton.md#o-que-tests-skeleton-verifica
+     * @see docs/manutencao-do-skeleton.md#guia-de-migração-removido
+     */
     #[DataProvider('deliveredDocs')]
     public function testDeliveredDocumentationCitesNoFixedReference(string $file): void
     {
@@ -55,24 +62,6 @@ final class DeliveredReferencesTest extends TestCase
         self::assertStringNotContainsString('8.3-0.', $content);
         self::assertDoesNotMatchRegularExpression('~(?<![0-9a-fA-F])[0-9a-fA-F]{40}(?![0-9a-fA-F])~', $content);
         self::assertStringNotContainsString('manutencao-do-skeleton.md', $content);
-        self::assertStringNotContainsString('MIGRACAO-BOOTSTRAP', $content);
-    }
-
-    public function testNoDeliveredFileCitesTheMigrationGuide(): void
-    {
-        $files = Skeleton::deliveredTextFiles();
-        self::assertNotContains('docs/MIGRACAO-BOOTSTRAP.md', $files);
-
-        foreach ($files as $file) {
-            $content = Skeleton::read($file);
-            if ($file === 'README.md') {
-                $content = Skeleton::withoutMarkedBlock($content, Skeleton::README_START, Skeleton::README_END);
-            }
-            if ($file === '.gitattributes') {
-                $content = Skeleton::withoutMarkedBlock($content, Skeleton::ATTRIBUTES_START, Skeleton::ATTRIBUTES_END);
-            }
-            self::assertStringNotContainsString('MIGRACAO-BOOTSTRAP', $content, $file);
-        }
     }
 
     public function testReadmeHasExactlyOneSkeletonBlock(): void
