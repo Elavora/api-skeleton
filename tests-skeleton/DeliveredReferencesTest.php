@@ -14,6 +14,14 @@ use SkeletonTests\Support\Skeleton;
  */
 final class DeliveredReferencesTest extends TestCase
 {
+    /**
+     * A única referência válida à imagem é `ghcr.io/elavora/php-dev:8.3-latest`. A documentação pode citar também
+     * a imagem sem tag. Nenhuma outra versão com `-latest` é aceita, nem na documentação: ela não tem mais o passo a
+     * passo de troca da versão do PHP.
+     *
+     * @see docs/manutencao-do-skeleton.md#versões-e-referências
+     * @see docs/manutencao-do-skeleton.md#o-que-a-doc-entregue-não-diz
+     */
     public function testDeliveredFilesOnlyUseTheTrackingDevelopmentImage(): void
     {
         $files = Skeleton::deliveredTextFiles();
@@ -24,9 +32,6 @@ final class DeliveredReferencesTest extends TestCase
             foreach (Skeleton::imageReferences($content) as $reference) {
                 if (str_ends_with($file, '.md') && $reference === 'ghcr.io/elavora/php-dev') {
                     continue; // a documentação pode citar a imagem sem tag
-                }
-                if (str_ends_with($file, '.md') && preg_match('~^ghcr\.io/elavora/php-dev:\d+\.\d+-latest$~', $reference) === 1) {
-                    continue; // ex.: a troca para 8.4-latest em "Versão do PHP"
                 }
                 self::assertTrue(
                     Skeleton::isValidImageReference($reference),
