@@ -29,10 +29,8 @@ Essa última regra orienta tudo aqui. Um erro copiado para um projeto só sai de
    tag beta. Links da documentação entregue para a doc de outro repositório são a exceção: eles apontam para a
    `main`, para a pessoa ler a versão atual (veja [Documentação entregue](#documentação-entregue));
 4. a versão do PHP, e a de cada serviço do Compose, é uma decisão do projeto. Ela é a mesma em produção, no Dev
-   Container e no CI. Por isso o Dependabot não cuida de imagens Docker: ele trocaria a versão num lugar só. O
-   projeto troca todos os lugares juntos;
+   Container e no CI. Por isso o Dependabot não cuida de imagens Docker: ele trocaria a versão num lugar só;
 5. a documentação entregue não cita SHA nem tag fixa da imagem. Ela aponta para o arquivo onde a referência está.
-   Os valores exatos ficam nesta página, que não é entregue.
 
 Se a automação do skeleton fosse junto, cada projeto criado tentaria publicar releases como `elavora/api-skeleton`,
 apagaria as próprias labels toda semana e procuraria um secret do Packagist. Por isso os arquivos se dividem em dois
@@ -52,7 +50,7 @@ O conteúdo exato da entrega está na [Referência da entrega](#referência-da-e
 ## Como uma versão do skeleton é publicada
 
 O skeleton usa o fluxo central do [`Elavora/.github`](https://github.com/Elavora/.github/blob/main/docs/release.md),
-na versão `1.3.0`. Na prática:
+na versão fixada por SHA no `skeleton-release.yml`. Na prática:
 
 1. Abra o PR para a `main` e aplique as labels. Elas decidem a versão:
    - `upgrade`: major (`1.1.0` → `2.0.0`);
@@ -71,36 +69,16 @@ com `--stability=beta`. Elas servem para testar uma mudança antes de liberá-la
 As regras completas de versão (agregação de PRs, transições de beta, tags legadas) estão em
 [versionamento.md](https://github.com/Elavora/.github/blob/main/docs/versionamento.md).
 
-### Primeira versão no fluxo novo
+### Antes de gerar uma estável
 
-A adoção sai em etapas:
+Antes do PR com `release`, crie um projeto real a partir da última beta
+(`composer create-project elavora/api-skeleton <pasta> <versão-beta>`) e confira pelo menos:
 
-1. **PR de adoção, com a label `upgrade` e sem `release`.** Ele gera `2.0.0-beta.1`. O major acompanha o framework
-   2, que o skeleton passa a exigir (`elavora/api-framework: ^2.0`). Com `enhancement` sairia `1.1.0-beta.1`, que é
-   menor que a `v1.1.0-rc.2` legada (veja [Tags antigas](#tags-antigas)).
-2. **Validação.** Um projeto real é criado a partir da beta
-   (`composer create-project elavora/api-skeleton <pasta> 2.0.0-beta.1`) e usado de verdade. Conferir pelo menos:
-   - a limpeza: nenhum arquivo só do skeleton, `README.md` sem o bloco de manutenção, `composer.json` sem
-     `post-create-project-cmd`;
-   - o Dev Container abre e formata ao salvar;
-   - o primeiro PR roda `quality / Qualidade PHP` e `Imagem Docker`, com o comentário fixo;
-   - o primeiro PR do Dependabot roda o pipeline central (veja [Riscos e pendências](#riscos-e-pendências));
-   - um PR do Dependabot para o `Elavora/.github` troca o SHA e o comentário de versão do `quality.yml`, e os testes
-     da entrega continuam passando.
-3. **PR seguinte, com `release`.** Ele gera a estável, com o que a validação tiver corrigido.
-
-Enquanto só houver a beta, `composer create-project elavora/api-skeleton` continua instalando a `v1.0.0`.
-
-### Tags antigas
-
-As tags `vX.Y.Z` existentes contam como histórico. A última estável é a `v1.0.0`. As `vX.Y.Z-rc.N` são ignoradas
-pelo fluxo novo.
-
-Os PRs integrados desde a `v1.0.0` (#37, #38 com `enhancement`, #39) entram na primeira versão, junto com o PR de
-adoção.
-
-Para o Composer, um `1.1.0-beta.1` seria menor que a `v1.1.0-rc.2` antiga. Quem pedisse `--stability=RC` receberia
-essa rc. Por isso o PR de adoção usa `upgrade`, que gera `2.0.0-beta.1`.
+- a limpeza: nenhum arquivo só do skeleton, `README.md` sem o bloco de manutenção, `composer.json` sem
+  `post-create-project-cmd`;
+- o Dev Container abre e formata ao salvar;
+- o primeiro PR roda `quality / Qualidade PHP` e `Imagem Docker`;
+- o primeiro PR do Dependabot roda o pipeline central (veja [Riscos e pendências](#riscos-e-pendências)).
 
 ## Labels
 
@@ -108,14 +86,14 @@ O repositório é sincronizado com o catálogo de labels da organização
 ([labels.md](https://github.com/Elavora/.github/blob/main/docs/labels.md)). Isso acontece uma vez por semana e sob
 demanda, em **Actions > Sincronizar labels > Run workflow**.
 
-A sincronização apaga toda label fora do catálogo. Hoje isso remove `IA`, `github_actions`, `github-actions`, `php`,
-`security`, `ci`, `major`, `minor`, `patch` e `prerelease`. Ela também cria `feature` e `improvement`.
+A sincronização apaga toda label fora do catálogo e cria as que faltam.
 
-O Dependabot é configurado com `labels: ["dependencies"]` para não recriar as labels de ecossistema.
+O Dependabot é configurado com `labels: ["dependencies"]` para não recriar as labels de ecossistema (`php`,
+`github_actions`), que a sincronização apagaria.
 
 ## Packagist
 
-A notificação ao Packagist é um job do workflow de release. O antigo `packagist-sync.yml` foi removido.
+A notificação ao Packagist é um job do workflow de release.
 
 O job precisa do secret `PACKAGIST_WEBHOOK_URL`, de preferência na organização, com acesso ao repositório
 `api-skeleton`.
@@ -142,11 +120,11 @@ Coloque o caminho em três lugares: a lista `SKELETON_ONLY` do script, o bloco d
 
 ### Ao mudar algo da entrega
 
-Pergunte primeiro: isso pode ficar num pacote ou no workflow central, em vez de ser copiado? Se for copiado, os
-projetos já criados nunca recebem a mudança.
+Pergunte primeiro: isso pode ficar num pacote ou no workflow central, em vez de ser copiado? Se for copiado, a
+mudança vale só para os projetos criados depois dela. Os projetos já criados nunca a recebem.
 
-Quando a mudança corrigir um erro que já foi entregue, descreva nas notas de release o que os projetos existentes
-precisam fazer à mão.
+O skeleton não tem guia de atualização para projetos já criados, nem nas notas de release. Ele é só o ponto de
+partida: se a entrega for fina, não há o que atualizar.
 
 ## Testes da entrega
 
@@ -172,25 +150,12 @@ fica em `tests-skeleton/`, que não vai para o projeto.
 
 ### Matriz de perfis fora do CI
 
-O `skeleton-tests.yml` não tem o job `perfis` (check `Perfil (base)`) nem nenhuma matriz (`strategy`/`matrix`).
+O `skeleton-tests.yml` não tem o job `perfis`, nenhum job com `name: Perfil (...)` nem matriz (`strategy`/`matrix`).
+Só com o perfil `base`, ele repetia o job `Imagem Docker` do `quality.yml`, que sobe a API e confere `/health`.
 
-Por quê: só restava o perfil `base`, e ele fazia o mesmo que o job `Imagem Docker` do `quality.yml`, que também
-roda neste repositório. Os dois sobem a API com o `docker-compose.yml` e conferem que `/health` e `/health/show`
-respondem `{"status":"ok"}`. O `Perfil (base)` conferia ainda que a classe `Elavora\Api\Framework\Application`
-carrega; o `/health` só responde se o framework carrega, então isso já está coberto.
-
-A matriz volta junto com as extensões, quando os pacotes delas aceitarem o `elavora/api-framework` 2 (veja
-[Riscos e pendências](#riscos-e-pendências)). Quando voltar:
-
-- cada perfil sobe a API com o `docker-compose.yml` e o overlay de `core/compose/` dele;
-- confere `/health` e `/health/show`, a extensão PHP do perfil e as classes do pacote;
-- nenhum perfil troca o `elavora/api-framework` por uma branch: o framework vem do `composer.lock`;
-- os testes de `tests-skeleton/` voltam a conferir o job.
-
-Exemplo do que vale hoje:
-
-- certo: jobs `entrega`, `build-producao` e `actionlint`;
-- errado: um job `perfis`, um job com `name: Perfil (...)` ou uma matriz só com o perfil `base`.
+A matriz volta com as extensões, quando elas aceitarem o framework 2 (veja
+[Riscos e pendências](#riscos-e-pendências)): um perfil por overlay de `core/compose/`, com o framework vindo do
+`composer.lock`.
 
 ### Teste de arquivo do skeleton fica em `tests-skeleton/`
 
@@ -237,7 +202,7 @@ Por isso os testes conferem o **formato** das referências que o Dependabot atua
 
 Exemplos que precisam passar:
 
-- `uses: Elavora/.github/.github/workflows/php-quality.yml@d96e9bb606f84016dd031ad748d009d820fd5487 # 1.3.0` trocado
+- `uses: Elavora/.github/.github/workflows/php-quality.yml@0123456789abcdef0123456789abcdef01234567 # 1.3.0` trocado
   por outro SHA com `# 1.4.0`;
 - `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7` trocado por outro SHA com `# v7.1.0`;
 - `"elavora/api-framework": "^2.0"` trocado por `"^2.1"`;
@@ -246,23 +211,22 @@ Exemplos que precisam passar:
 Exemplos que precisam falhar:
 
 - `uses: Elavora/.github/.github/workflows/php-quality.yml@1.3.0` (tag em vez de SHA);
-- `uses: Elavora/.github/.github/workflows/php-quality.yml@d96e9bb606f84016dd031ad748d009d820fd5487` (sem o comentário
+- `uses: Elavora/.github/.github/workflows/php-quality.yml@0123456789abcdef0123456789abcdef01234567` (sem o comentário
   de versão);
-- `uses: Elavora/.github/.github/workflows/php-quality.yml@d96e9bb` (SHA curto);
+- `uses: Elavora/.github/.github/workflows/php-quality.yml@0123456` (SHA curto);
 - `"elavora/api-framework": "^3.0"` (outro major);
 - `"elavora/code-standards": "^1.0"` (minor abaixo de 1: a 1.0.0 não tem o `lint`);
 - `"elavora/code-standards": "^2.1"` (outro major).
 
-Os valores da tabela [Versões e referências](#versões-e-referências) são os da adoção. Nenhum teste os compara com
-os workflows. Depois de um PR do Dependabot, a tabela pode ficar com o valor antigo.
+Por isso esta página não guarda os valores que o Dependabot troca (veja
+[Versões e referências](#versões-e-referências)). Os SHAs dos exemplos acima são só ilustração do formato.
 
 ## Riscos e pendências
 
-- **Primeiro PR de adoção**: o formatador reformata o código existente e commita um `style: organiza o código` na
-  branch. É esperado.
 - **PRs do Dependabot e OIDC.** O pipeline central descobre a própria versão pelo token OIDC (`id-token: write`).
   Se o GitHub não conceder o `id-token` nos PRs do Dependabot, o check falha nesses PRs, com a mensagem pedindo o
-  `automation_ref`. Conferir na validação da beta. Se falhar, a correção é no `Elavora/.github`, não no projeto.
+  `automation_ref`. Conferir [antes de gerar uma estável](#antes-de-gerar-uma-estável). Se falhar, a correção é no
+  `Elavora/.github`, não no projeto.
 - **PRs de fork** não recebem `id-token` e falham no início do pipeline central. Aceito: os projetos trabalham com
   branches internas.
 - **Perfis de aplicação e o framework 2.** Os pacotes de extensão ainda não têm versão que aceite
@@ -277,14 +241,17 @@ também para o próprio repositório `api-skeleton`, que usa os mesmos arquivos.
 
 ### Versões e referências
 
-| Constante | Valor na adoção | Como se atualiza no projeto |
+A tabela diz onde cada referência está. Para as que o Dependabot troca, ela dá o formato, e não o valor: o valor
+atual é o do arquivo.
+
+| Referência | Valor | Onde está |
 | --- | --- | --- |
-| Imagem de desenvolvimento | `ghcr.io/elavora/php-dev:8.3-latest` | sozinha: a tag acompanha as estáveis da imagem |
-| Imagem do CI de qualidade | nenhuma no `quality.yml`: vale o padrão do `php-quality.yml`, que na 1.3.0 é `ghcr.io/elavora/php-dev:8.3-latest` | sozinha |
-| `Elavora/.github` | `d96e9bb606f84016dd031ad748d009d820fd5487`, com o comentário `# 1.3.0` | PR do Dependabot |
-| `elavora/code-standards` | `^1.1` em `require-dev` (o lock instala a 1.1.0) | PR do Dependabot |
-| `elavora/api-framework` | `^2.0` em `require` (o lock instala a 2.0.0) | PR do Dependabot |
-| PHP | `8.3`: `php:8.3-cli-alpine` no `Dockerfile`, `8.3-latest` na imagem de desenvolvimento, `>=8.3` em `require.php` | decisão do projeto, todos os lugares juntos |
+| Imagem de desenvolvimento | `ghcr.io/elavora/php-dev:8.3-latest` | `.devcontainer/devcontainer.json` e job `entrega` do `skeleton-tests.yml` |
+| Imagem do CI de qualidade | nenhuma: vale o padrão do `php-quality.yml` central | `quality.yml`, sem `image` |
+| `Elavora/.github` | SHA de 40 caracteres com o comentário `# X.Y.Z` | `uses` do `quality.yml`, `skeleton-release.yml` e `skeleton-sync-labels.yml` |
+| `elavora/code-standards` | restrição `^1.` com minor 1 ou maior, em `require-dev` | `composer.json` e `composer.lock` |
+| `elavora/api-framework` | restrição `^2.`, em `require` | `composer.json` e `composer.lock` |
+| PHP | `8.3` | `php:8.3-cli-alpine` no `Dockerfile`, `8.3-latest` na imagem de desenvolvimento, `>=8.3` em `require.php` |
 
 Em qualquer arquivo entregue, a única referência válida à imagem de desenvolvimento é exatamente
 `ghcr.io/elavora/php-dev:8.3-latest`. São inválidos:
@@ -296,21 +263,18 @@ Em qualquer arquivo entregue, a única referência válida à imagem de desenvol
 
 ### `composer.json`
 
-Só as mudanças desta tarefa. O resto continua igual.
-
-- `require.elavora/api-framework`: `^2.0`. Sai o `dev-main as 1.0.x-dev`.
-- A chave `repositories` (repositório VCS do `api-framework`) é removida. O framework vem do Packagist.
-- `require-dev.elavora/code-standards`: `^1.1`. O subcomando `lint` só existe a partir da 1.1.0, e o CI roda o lint
-  com as dependências nas versões mínimas. Com `^1.0`, o CI instalaria a 1.0.0 e o `composer lint` falharia.
-  O `friendsofphp/php-cs-fixer` **não** entra: o binário vem da imagem.
-- `scripts.lint`: exatamente `elavora-standards lint`, sem argumentos. Sai o `@php tools/lint.php`, e o arquivo
-  `tools/lint.php` é removido. O lint do pacote confere todo `.php` do projeto, menos `vendor/` e o que começa com
-  ponto, então não precisa de lista de pastas. O `scripts.check` continua chamando `@lint`.
+- `require.elavora/api-framework`: restrição que começa com `^2.` (hoje `^2.0`), sem `dev-`. O framework vem do
+  Packagist: não há chave `repositories`.
+- `require-dev.elavora/code-standards`: restrição que começa com `^1.` e minor 1 ou maior (hoje `^1.1`). O
+  subcomando `lint` só existe a partir da 1.1.0, e o CI roda o lint com as dependências nas versões mínimas. Com
+  `^1.0`, o CI instalaria a 1.0.0 e o `composer lint` falharia. O `friendsofphp/php-cs-fixer` **não** entra: o
+  binário vem da imagem.
+- `scripts.lint`: exatamente `elavora-standards lint`, sem argumentos. O arquivo `tools/lint.php` não existe. O lint
+  do pacote confere todo `.php` do projeto, menos `vendor/` e o que começa com ponto, então não precisa de lista de
+  pastas. O `scripts.check` chama `@lint`.
 - `scripts.post-install-cmd` e `scripts.post-update-cmd`: cada um é exatamente
   `["Elavora\\CodeStandards\\Composer::sync"]`.
 - `scripts.post-create-project-cmd` é só do skeleton (veja [`composer.json` do skeleton](#composerjson-do-skeleton)).
-- O `composer.lock` é regenerado em container, porque `require` e `require-dev` mudaram. Na troca de `^1.0` para
-  `^1.1`, a versão instalada continua a 1.1.0; muda só o `content-hash` (`composer update --lock`).
 
 A sincronização é um método PHP, e não o comando `vendor/bin/elavora-standards sync`. O motivo é o build de
 produção, que roda `composer install --no-dev`.
@@ -349,7 +313,6 @@ O `<source>` fica exatamente assim:
 - `<exclude>` tem um único `<directory>`, `app/Worker`. O `tasks.php` usa o `elavora/api-queue-worker`, que não vem
   instalado, e nenhum teste o executa. É o mesmo motivo de o PHPStan ignorar `app/Worker`. Sem essa exclusão, a
   cobertura do projeto recém-criado ficaria abaixo da meta de 80%.
-- O resto do `phpunit.xml` não muda.
 
 ### `app/` e `tests/`
 
@@ -359,7 +322,7 @@ precisa apagar à mão. Fica só o que o projeto usa de verdade.
 A checagem de saúde **não** é exemplo. O job `Imagem Docker` do `quality.yml` sobe a API e confere `/health` e
 `/health/show`. Por isso o `HealthController`, o `HttpRoutes` e os testes dessas rotas ficam.
 
-Conteúdo de `app/` depois desta mudança (nada além disto):
+Conteúdo de `app/` (nada além disto):
 
 | Caminho | Conteúdo |
 | --- | --- |
@@ -367,8 +330,8 @@ Conteúdo de `app/` depois desta mudança (nada além disto):
 | `app/Contracts/.gitkeep` | vazio |
 | `app/DataTypes/.gitkeep` | vazio |
 | `app/Enums/.gitkeep` | vazio |
-| `app/Http/Controller/HealthController.php` | sem mudança |
-| `app/Http/HttpRoutes.php` | sem mudança: registra `GET /health` para `HealthController::show` |
+| `app/Http/Controller/HealthController.php` | ação `show`, que responde `{"status":"ok"}` |
+| `app/Http/HttpRoutes.php` | registra `GET /health` para `HealthController::show` |
 | `app/Integrations/.gitkeep` | vazio |
 | `app/Repositories/.gitkeep` | vazio |
 | `app/Services/.gitkeep` | vazio |
@@ -389,17 +352,13 @@ use Elavora\Api\Extension\QueueWorker\TaskRegistry;
 return new TaskRegistry();
 ```
 
-O `worker.php` não muda. Ele continua carregando o `tasks.php`.
+O `worker.php` carrega o `tasks.php`.
 
-Saem estes arquivos:
+Os exemplos antigos não existem: `app/Attributes/Permission.php`, `app/DataTypes/ProjectCode.php`,
+`app/Worker/ExampleTaskHandler.php`, `tests/GuideExamplesTest.php` e `tests/ResponseableDataTypeTest.php`.
 
-| Arquivo | Por quê |
-| --- | --- |
-| `app/Attributes/Permission.php` | exemplo de attribute |
-| `app/DataTypes/ProjectCode.php` | exemplo de DataType |
-| `app/Worker/ExampleTaskHandler.php` | exemplo de handler de fila |
-| `tests/GuideExamplesTest.php` | testa só `Permission` e `ProjectCode` |
-| `tests/ResponseableDataTypeTest.php` | testa só `ProjectCode` |
+Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) cita `Permission.php`,
+`ProjectCode`, `ExampleTaskHandler`, `example.ping` ou `Exemplos didaticos`.
 
 #### O que fica em `tests/`
 
@@ -411,20 +370,12 @@ Conteúdo de `tests/` (nada além disto):
 | `tests/HealthEndpointTest.php` | `/health` responde `{"status":"ok"}` sem extensões opcionais |
 | `tests/bootstrap.php` | carrega o autoload do Composer |
 
-Os arquivos que ficam não mudam.
-
 #### Testes movidos para `tests-skeleton/`
 
-Estes dois testes saem de `tests/` e passam para `tests-skeleton/`, com o mesmo nome de arquivo e de classe. Eles
-conferem arquivos do skeleton, e não a aplicação (veja
-[Teste de arquivo do skeleton fica em `tests-skeleton/`](#teste-de-arquivo-do-skeleton-fica-em-tests-skeleton)):
-
-| Antes | Depois |
-| --- | --- |
-| `tests/ApcuDockerConfigurationTest.php` | `tests-skeleton/ApcuDockerConfigurationTest.php` |
-| `tests/ProjectConfigurationTest.php` | `tests-skeleton/ProjectConfigurationTest.php` |
-
-Nenhuma conferência se perde. Cada teste continua conferindo exatamente o mesmo de antes:
+`tests-skeleton/ApcuDockerConfigurationTest.php` e `tests-skeleton/ProjectConfigurationTest.php` conferem arquivos do
+skeleton, e não a aplicação (veja
+[Teste de arquivo do skeleton fica em `tests-skeleton/`](#teste-de-arquivo-do-skeleton-fica-em-tests-skeleton)).
+Por isso não existem em `tests/`.
 
 **`ApcuDockerConfigurationTest`** (bloco do APCu):
 
@@ -444,18 +395,17 @@ Nenhuma conferência se perde. Cada teste continua conferindo exatamente o mesmo
 - o `docker-compose.yml` contém `path: ${ELAVORA_ENV_FILE:-.env}` e `required: false` (o `.env` opcional do
   `env_file`).
 
-O [`DockerfileTest`](#dockerfile) confere outra parte do `Dockerfile` (o estágio `dependencies` e a ausência do Git).
-Ele não cobre o bloco do APCu, a ordem até o `COPY . .`, o `composer update` nem o `env_file` do Compose. Por isso os
-dois testes são movidos inteiros, e não apagados.
-
 Os dois rodam no job `entrega` do `skeleton-tests.yml`. Não precisam de Docker, então não entram no grupo `docker`.
 
-A cobertura medida pelo CI do projeto não muda: ela conta só o código de `app/`, e esses testes não executavam nada
-de `app/`.
+O [`DockerfileTest`](#dockerfile) e o `ProjectConfigurationTest` se cruzam numa parte: os dois conferem o
+`COPY composer.json composer.lock ./` e o `RUN composer install ...` do estágio `dependencies`. O `DockerfileTest`
+confere o texto exato do estágio; o `ProjectConfigurationTest` confere a ordem até o `COPY . .` e a ausência de
+`composer update`, que o `DockerfileTest` não cobre. A sobreposição fica: são duas linhas, cada teste falha por um
+motivo diferente, e juntar os dois não tiraria nenhuma conferência.
 
 #### Testes que repetiam o framework
 
-Saem estes testes. Eles conferiam o `EnvironmentExtensions` do framework, e não o projeto (veja
+Estes testes não existem em `tests/`. Eles conferiam o `EnvironmentExtensions` do framework, e não o projeto (veja
 [Teste do framework fica no framework](#teste-do-framework-fica-no-framework)):
 
 | Arquivo | O que conferia | Onde fica coberto |
@@ -466,8 +416,6 @@ Saem estes testes. Eles conferiam o `EnvironmentExtensions` do framework, e não
 
 Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) cita
 `ExtensionConfigurationTest`, `LogExtensionConfigurationTest` ou `RedisExtensionEnvironmentTest`.
-
-A cobertura medida pelo CI não muda: ela conta só o código de `app/`, e esses testes não executavam nada de `app/`.
 
 ### `core/bootstrap/app.php`
 
@@ -483,14 +431,10 @@ padrão do framework. A regra confere o texto do arquivo: o `core/bootstrap/app.
 - Falha: `ApplicationBootstrap::create(..., loadEnvironmentExtensions: false)`.
 - Falha também: `loadEnvironmentExtensions: true`. O valor repete o padrão, e a regra é não citar o argumento.
 
-Antes, os testes que repetiam o framework davam essa garantia de passagem. Agora ela é uma checagem de conteúdo em
-`tests-skeleton/`, que não depende das mensagens de erro do framework.
-
 #### Lista de extensões do projeto no `app.php`
 
-A lista de extensões do projeto fica dentro do `core/bootstrap/app.php`, no argumento `extensions:`. Antes ela ficava
-num arquivo à parte, o `core/config/extensions.php`, que só devolvia uma lista vazia. Era um arquivo a mais para
-abrir, sem nada que o `app.php` não pudesse ter.
+A lista de extensões do projeto fica dentro do `core/bootstrap/app.php`, no argumento `extensions:`, e não num
+arquivo à parte: um arquivo que só devolve uma lista vazia é um arquivo a mais para abrir.
 
 São duas coisas diferentes:
 
@@ -533,10 +477,6 @@ Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skele
 
 - Passa: o `README.md` com a árvore de `core/` sem a linha `config/extensions.php`.
 - Falha: o `README.md` antigo, com `` `-- config/extensions.php # Registra extensões próprias e overrides do projeto.``.
-
-Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) cita `Permission.php`,
-`ProjectCode`, `ExampleTaskHandler`, `example.ping` ou `Exemplos didaticos`. O README troca a seção
-"Exemplos didaticos" por "O que já vem em `app/`".
 
 ### Documentação entregue
 
@@ -660,7 +600,7 @@ uma variável seria uma quebra para os projetos, e isso só acontece num major n
 
 #### Conteúdo exato do `.env.example`
 
-É o conteúdo que o dev escreve. Os testes conferem as regras acima, não este texto. O arquivo termina com
+É o conteúdo do arquivo. Os testes conferem as regras acima, não este texto. O arquivo termina com
 uma única quebra de linha depois de `# MONGO_LOG_PASSWORD=`, sem linha vazia no fim.
 
 Os valores comentados são exemplos. Os de Redis e de banco são os que os overlays de `core/compose/` usam (serviço
@@ -764,19 +704,16 @@ Conforme o contrato do `elavora/code-standards` (`docs/adocao.md` do pacote):
 - **`.editorconfig`**, na raiz, versionado. Ele tem exatamente um bloco, gerado pela sincronização, entre as linhas
   `# >>> elavora/code-standards >>>` e `# <<< elavora/code-standards <<<`. Não há nada fora do bloco. O arquivo é
   versionado para o editor funcionar antes do primeiro `composer install`.
-- **`.gitignore`** ganha as linhas `/.elavora/` (pasta onde o CI baixa os scripts centrais) e `/.php-cs-fixer.php`
+- **`.gitignore`** tem as linhas `/.elavora/` (pasta onde o CI baixa os scripts centrais) e `/.php-cs-fixer.php`
   (override pessoal).
-- Na adoção, `composer install` sobre o repositório recém-clonado não altera nenhum dos dois arquivos. Isso é
-  conferido à mão, no PR de adoção. Não é teste automático, porque um PR do Dependabot pode mudar o bloco (veja
+- `composer install` sobre o repositório recém-clonado não altera nenhum dos dois arquivos. Isso é conferido à mão.
+  Não é teste automático, porque um PR do Dependabot pode mudar o bloco (veja
   [Atualizações do Dependabot não quebram os testes](#atualizações-do-dependabot-não-quebram-os-testes)).
 
 ### `Dockerfile`
 
-O estágio `dependencies` não instala o Git.
-
-O Git só existia ali porque o framework vinha de uma branch, por repositório VCS, sem zip para baixar. Agora o
-`elavora/api-framework` `^2.0` vem do Packagist. Com `--prefer-dist`, o Composer baixa o zip de cada pacote e não
-precisa do Git.
+O estágio `dependencies` não instala o Git. Todo pacote vem do Packagist, e com `--prefer-dist` o Composer baixa o
+zip de cada um, sem o Git.
 
 O estágio `dependencies` fica exatamente assim:
 
@@ -790,14 +727,6 @@ COPY composer.json composer.lock ./
 # Pacotes de desenvolvimento ficam fora da imagem final.
 RUN composer install --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader
 ```
-
-O que sai:
-
-- a linha `RUN apk add --no-cache --virtual .composer-install-deps git`;
-- o `&& apk del .composer-install-deps` no fim do `composer install`;
-- o comentário sobre as branches coordenadas sem artefatos dist.
-
-O resto do `Dockerfile` não muda: os estágios `composer` e `runtime`, o estágio final, o `EXPOSE` e o `CMD`.
 
 Regras que os testes conferem:
 
@@ -833,15 +762,11 @@ Segue o `examples/devcontainer.json` do `Elavora/devcontainers`:
 
 O arquivo é JSON válido, sem comentários.
 
-O rascunho que está hoje na working tree não atende: ele tem `"image": "elavora/php-dev:8.3"` e não tem as extensões
-de formatação.
-
 ### `.github/workflows/quality.yml`
 
-Substitui o `quality.yml` antigo, que chamava o SHA `1e0f42a` da branch abandonada `fix/centraliza-automacao`.
-
 Segue o chamador de [qualidade.md](https://github.com/Elavora/.github/blob/main/docs/qualidade.md) do
-`Elavora/.github` 1.3.0:
+`Elavora/.github`. `<SHA>` e `<X.Y.Z>` são os da linha `uses` atual (veja
+[Versões e referências](#versões-e-referências)):
 
 ```yaml
 name: Qualidade
@@ -861,7 +786,7 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write
-    uses: Elavora/.github/.github/workflows/php-quality.yml@d96e9bb606f84016dd031ad748d009d820fd5487 # 1.3.0
+    uses: Elavora/.github/.github/workflows/php-quality.yml@<SHA> # <X.Y.Z>
 
   imagem:
     name: Imagem Docker
@@ -872,7 +797,7 @@ jobs:
 - Sem `image`: a imagem do CI é o padrão do pipeline central, `8.3-latest`, que acompanha as estáveis. Passar
   `image` com uma tag fixa congelaria a imagem no projeto.
 - Sem `automation_ref`: o pipeline central descobre a própria versão pelo OIDC, e o SHA aparece uma única vez, no
-  `uses`. Assim o Dependabot troca o SHA e o comentário `# 1.3.0` na mesma linha. Com `automation_ref`, o
+  `uses`. Assim o Dependabot troca o SHA e o comentário de versão na mesma linha. Com `automation_ref`, o
   Dependabot atualizaria só o `uses`, e as duas posições ficariam diferentes.
 - Os padrões do pipeline central ficam ligados: cobertura com meta de 80% (só reporta), `composer audit` e
   dependências mínimas.
@@ -895,7 +820,7 @@ O `quality.yml` **não** pode conter nenhum destes textos:
 | `fix/estabiliza-pacote` ou `dev-` | branches de desenvolvimento de pacotes |
 | `PACKAGIST_WEBHOOK_URL` | secret do release do skeleton |
 | `secrets: inherit` | o workflow de qualidade não precisa de secrets do repositório |
-| `php-dev` | a imagem do CI é a do pipeline central. O projeto só a informa ao trocar a versão do PHP |
+| `php-dev` | a imagem do CI é a do pipeline central |
 
 ### `.github/dependabot.yml`
 
@@ -915,15 +840,11 @@ O `quality.yml` **não** pode conter nenhum destes textos:
 
 ### Workflows que não existem mais
 
-Estes arquivos são removidos: `.github/workflows/codeql.yml`, `.github/workflows/dependency-review.yml`,
+Estes arquivos não existem: `.github/workflows/codeql.yml`, `.github/workflows/dependency-review.yml`,
 `.github/workflows/packagist-sync.yml`, `.github/workflows/release.yml` e `.github/workflows/sync-labels.yml`.
 
-Todos, menos o `packagist-sync.yml`, chamavam workflows da branch abandonada do `Elavora/.github`.
-
-CodeQL e Dependency Review também exigem o GitHub Advanced Security em repositórios privados. Esse é o caso comum de
-um projeto criado a partir do skeleton. Por isso eles não são entregues nem ficam no skeleton.
-
-O release e as labels do skeleton continuam existindo, com outros nomes, só no repositório do skeleton.
+O release e as labels do skeleton são os `skeleton-*.yml`, só do skeleton. CodeQL e Dependency Review exigem o GitHub
+Advanced Security em repositórios privados, o caso comum de um projeto criado. Por isso não são entregues.
 
 Depois da criação do projeto, o único arquivo em `.github/workflows/` é o `quality.yml`. O `.github/` não tem
 template de PR: o da organização vale para os repositórios dela.
@@ -945,19 +866,13 @@ Essa lista, nessa ordem, é a constante `SKELETON_ONLY` do script.
 
 ### Guia de migração removido
 
-O skeleton não tem mais o guia de migração para projetos da estrutura 1.0. O arquivo foi apagado e saiu de quatro
-lugares: a tabela acima, o bloco do [`.gitattributes`](#gitattributes), a constante `SKELETON_ONLY` do script e o
-bloco "Só no repositório do skeleton" do `README.md`.
-
-Por quê: o guia só servia a projetos criados com a estrutura 1.0, e nenhum projeto usa essa estrutura. Ele também
-citava issues já tratadas.
-
-Com o arquivo apagado, nenhum arquivo do repositório cita o guia. Por isso os testes da entrega não conferem mais se a
-documentação entregue cita o guia.
+O skeleton não tem guia de migração para projetos da estrutura 1.0: nenhum projeto usa essa estrutura. O guia não
+aparece na tabela acima, no bloco do [`.gitattributes`](#gitattributes), na constante `SKELETON_ONLY` nem no bloco
+"Só no repositório do skeleton" do `README.md`.
 
 ### `.gitattributes`
 
-O arquivo ganha, no fim, um bloco delimitado por duas linhas exatas:
+O arquivo termina com um bloco delimitado por duas linhas exatas:
 
 ```gitattributes
 # skeleton:inicio
@@ -970,7 +885,7 @@ O arquivo ganha, no fim, um bloco delimitado por duas linhas exatas:
 ```
 
 `tools/skeleton-post-create.php` **não** entra no bloco. Com `export-ignore`, ele não estaria no zip, e o
-`post-create-project-cmd` falharia. O resto do `.gitattributes` não muda.
+`post-create-project-cmd` falharia.
 
 ### `composer.json` do skeleton
 
@@ -979,8 +894,7 @@ Em `scripts`, a chave `post-create-project-cmd` tem exatamente `["@php tools/ske
 Três chaves do `composer.json` são só do skeleton e saem na criação do projeto: `name` (`elavora/api-skeleton`),
 `description` e `scripts.post-create-project-cmd`.
 
-As outras mudanças (framework `^2.0`, saída do repositório VCS, `elavora/code-standards` e a sincronização) fazem
-parte da entrega. Elas estão em [`composer.json`](#composerjson).
+O resto do `composer.json` é da entrega e está em [`composer.json`](#composerjson).
 
 No `create-project`, o `post-install-cmd` (sincronização das regras de estilo) roda antes do
 `post-create-project-cmd` (limpeza). Os dois são independentes, e a ordem entre eles não muda o resultado.
@@ -1074,15 +988,15 @@ Rodar uma cópia do script de novo, sobre o projeto já limpo, não altera nenhu
 
 Os três usam a condição `github.repository == 'Elavora/api-skeleton'` em todos os jobs.
 
-Os chamadores do `Elavora/.github` seguem o padrão da 1.3.0: SHA no `uses` com o comentário de versão, **sem**
-`automation_ref`, e `id-token: write` no job chamador.
+Os chamadores do `Elavora/.github` seguem o mesmo padrão do `quality.yml`: SHA no `uses` com o comentário de versão
+(`<SHA>` e `<X.Y.Z>` abaixo), **sem** `automation_ref`, e `id-token: write` no job chamador.
 
 **`skeleton-release.yml`** (`name: Release`):
 
 - gatilho `pull_request`, `types: [closed]`, `branches: [main]`;
 - `permissions: contents: read` no workflow; no job, `contents: write`, `pull-requests: read` e `id-token: write`;
 - `if: github.event.pull_request.merged == true && github.repository == 'Elavora/api-skeleton'`;
-- `uses: Elavora/.github/.github/workflows/release.yml@d96e9bb606f84016dd031ad748d009d820fd5487 # 1.3.0`;
+- `uses: Elavora/.github/.github/workflows/release.yml@<SHA> # <X.Y.Z>`;
 - `with`: `package_name: elavora/api-skeleton` (`packagist` fica no padrão, `true`);
 - `secrets`: `PACKAGIST_WEBHOOK_URL: ${{ secrets.PACKAGIST_WEBHOOK_URL }}`, sem `secrets: inherit`.
 
@@ -1091,7 +1005,7 @@ Os chamadores do `Elavora/.github` seguem o padrão da 1.3.0: SHA no `uses` com 
 - gatilhos `schedule` (`cron: '17 3 * * 1'`) e `workflow_dispatch`;
 - `permissions: contents: read` no workflow; no job, `contents: read`, `issues: write` e `id-token: write`;
 - `if: github.repository == 'Elavora/api-skeleton'`;
-- `uses: Elavora/.github/.github/workflows/sync-labels.yml@d96e9bb606f84016dd031ad748d009d820fd5487 # 1.3.0`.
+- `uses: Elavora/.github/.github/workflows/sync-labels.yml@<SHA> # <X.Y.Z>`.
 
 Nenhum workflow do repositório pode citar o SHA antigo `1e0f42a92a4aafc35522709c30bc4e83acab82f1`, o SHA da 1.0.0
 (`6884d27a5dc5930dceee3fe39f0b112faf5c3034`) nem `automation_ref`. O Dependabot do skeleton atualiza esses SHAs
