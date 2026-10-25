@@ -100,6 +100,15 @@ O PHPStan roda no nível 8 sem baseline. O entrypoint opcional de worker fica fo
 Ao mudar dependências, atualize e revise o lock deliberadamente. Builds e
 pipelines devem continuar usando `composer install`, nunca `composer update`.
 
+### Testes
+
+Os testes de `tests/` são do seu projeto: conferem a aplicação e a configuração dela.
+
+O comportamento do framework, como o bootstrap e a escolha das extensões pelo `.env`, é testado no próprio
+`elavora/api-framework`, na [pasta `tests/` do framework](https://github.com/Elavora/api-framework/tree/main/tests).
+Não copie esses testes para o projeto. O framework chega atualizado pelo Composer, mas a cópia fica parada e falha
+no seu CI quando o framework muda, por exemplo, uma mensagem de erro.
+
 ---
 
 [README](../README.md) · Próximo: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)

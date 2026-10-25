@@ -167,6 +167,20 @@ Os testes de `tests/` são da aplicação e vão para o projeto criado. Teste qu
 workflows do skeleton, conteúdo da entrega) fica em `tests-skeleton/`. No projeto criado esses arquivos não existem,
 e o teste falharia.
 
+### Teste do framework fica no framework
+
+`tests/` não tem teste que confira só o comportamento do `elavora/api-framework`. Exemplos: as mensagens de erro do
+`EnvironmentExtensions` para um driver inválido ou um pacote ausente, e as variáveis do Redis repassadas ao cache e à
+fila.
+
+Esses testes ficam no repositório `Elavora/api-framework`, em `tests/EnvironmentExtensionsTest.php` e
+`tests/RedisExtensionEnvironmentTest.php` ([pasta `tests/` do framework](https://github.com/Elavora/api-framework/tree/main/tests)).
+
+O motivo: o projeto recebe o framework pelo Composer, mas os testes copiados ficam congelados. Quando o framework
+muda uma mensagem de erro, o teste copiado falha no CI do projeto, sem que nada do projeto tenha mudado.
+
+A lista exata do que fica em `tests/` está em [`app/` e `tests/`](#app-e-tests).
+
 ### Atualizações do Dependabot não quebram os testes
 
 O Dependabot do skeleton abre PRs que mudam referências fixas. Esses PRs precisam passar nos testes da entrega sem
@@ -348,8 +362,35 @@ Saem estes arquivos:
 | `tests/GuideExamplesTest.php` | testa só `Permission` e `ProjectCode` |
 | `tests/ResponseableDataTypeTest.php` | testa só `ProjectCode` |
 
-Os outros testes de `tests/` ficam, sem mudança. O `HealthEndpointTest` e o `ConventionRouteTest` cobrem `/health` e
-`/health/show`.
+#### O que fica em `tests/`
+
+Conteúdo de `tests/` (nada além disto):
+
+| Arquivo | O que confere |
+| --- | --- |
+| `tests/ApcuDockerConfigurationTest.php` | o bloco do APCu no `Dockerfile` e o overlay `core/compose/apcu.yml` |
+| `tests/ConventionRouteTest.php` | `/health/show`, pela convenção `/controller/action` |
+| `tests/HealthEndpointTest.php` | `/health` responde `{"status":"ok"}` sem extensões opcionais |
+| `tests/ProjectConfigurationTest.php` | o `composer.lock` versionado, o `Dockerfile` e o `env_file` do Compose |
+| `tests/bootstrap.php` | carrega o autoload do Composer |
+
+Os arquivos que ficam não mudam.
+
+#### Testes que repetiam o framework
+
+Saem estes testes. Eles conferiam o `EnvironmentExtensions` do framework, e não o projeto (veja
+[Teste do framework fica no framework](#teste-do-framework-fica-no-framework)):
+
+| Arquivo | O que conferia | Onde fica coberto |
+| --- | --- | --- |
+| `tests/ExtensionConfigurationTest.php` | erro para `CACHE_DRIVER` e `DB_DRIVER` inválidos e para pacote de cache ou banco não instalado | `tests/EnvironmentExtensionsTest.php` do framework |
+| `tests/LogExtensionConfigurationTest.php` | erro para `LOG_DRIVER` inválido e para pacote de log não instalado | `tests/EnvironmentExtensionsTest.php` do framework |
+| `tests/RedisExtensionEnvironmentTest.php` | `REDIS_PASSWORD` e `REDIS_DATABASE` repassados ao cache e à fila | `tests/RedisExtensionEnvironmentTest.php` do framework |
+
+Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) cita
+`ExtensionConfigurationTest`, `LogExtensionConfigurationTest` ou `RedisExtensionEnvironmentTest`.
+
+A cobertura medida pelo CI não muda: ela conta só o código de `app/`, e esses testes não executavam nada de `app/`.
 
 Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) cita `Permission.php`,
 `ProjectCode`, `ExampleTaskHandler`, `example.ping` ou `Exemplos didaticos`. O README troca a seção
@@ -730,7 +771,10 @@ Todas as checagens de referências seguem
   - `<source>` do `phpunit.xml`: só `app` no `<include>` e só `app/Worker` no `<exclude>`;
   - ausência dos workflows removidos;
   - conteúdo de `app/` igual à tabela de [`app/` e `tests/`](#app-e-tests), o `tasks.php` exato, a ausência dos
-    arquivos de exemplo e de seus testes, e nenhuma citação aos exemplos nos arquivos entregues.
+    arquivos de exemplo e de seus testes, e nenhuma citação aos exemplos nos arquivos entregues;
+  - conteúdo de `tests/` igual à tabela de [O que fica em `tests/`](#o-que-fica-em-tests), a ausência dos
+    [testes que repetiam o framework](#testes-que-repetiam-o-framework) e nenhuma citação a eles nos arquivos
+    entregues.
 - O `composer.json`: `elavora/api-framework` com restrição que começa com `^2.`, sem `dev-` nem chave
   `repositories`; `elavora/code-standards` em `require-dev`, com restrição que começa com `^1.` e minor 1 ou
   maior; o script `lint` igual a `elavora-standards lint`; a ausência de `tools/lint.php`; os callbacks
