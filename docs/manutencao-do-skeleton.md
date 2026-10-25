@@ -464,6 +464,54 @@ padrão do framework. A regra confere o texto do arquivo: o `core/bootstrap/app.
 Antes, os testes que repetiam o framework davam essa garantia de passagem. Agora ela é uma checagem de conteúdo em
 `tests-skeleton/`, que não depende das mensagens de erro do framework.
 
+#### Lista de extensões do projeto no `app.php`
+
+A lista de extensões do projeto fica dentro do `core/bootstrap/app.php`, no argumento `extensions:`. Antes ela ficava
+num arquivo à parte, o `core/config/extensions.php`, que só devolvia uma lista vazia. Era um arquivo a mais para
+abrir, sem nada que o `app.php` não pudesse ter.
+
+São duas coisas diferentes:
+
+- as extensões instaladas e selecionadas no `.env`: o framework registra sozinho, porque o `app.php` não cita
+  `loadEnvironmentExtensions` (regra acima);
+- a lista `extensions:`: o que o projeto escreve à mão (extensões próprias e as que substituem uma configuração).
+  Começa vazia.
+
+O `core/bootstrap/app.php` fica exatamente assim:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use App\Http\HttpRoutes;
+use Elavora\Api\Framework\Bootstrap\ApplicationBootstrap;
+
+return ApplicationBootstrap::create(
+    basePath: dirname(__DIR__, 2),
+    // Registre aqui as extensoes proprias do projeto e as que substituem configuracoes.
+    // As extensoes instaladas e selecionadas no .env sao registradas pelo framework.
+    extensions: [],
+    configure: HttpRoutes::register(...),
+);
+```
+
+A lista é escrita direto no argumento, e não numa variável. Uma variável no `app.php` vazaria para quem faz
+`require` dele (`public/index.php`, `worker.php` e os testes de `tests/`).
+
+- Passa: o conteúdo acima, byte a byte (fim de linha LF e uma quebra de linha no fim do arquivo).
+- Falha: `extensions: require dirname(__DIR__) . '/config/extensions.php'`, que é o `app.php` antigo.
+- Falha: `$extensions = [];` antes do `return`, com `extensions: $extensions`.
+
+O arquivo `core/config/extensions.php` não existe, nem a pasta `core/config/`. A pasta `core/` continua com o mesmo
+nome e fica só com `bootstrap/app.php` e `compose/`.
+
+Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) contém o texto
+`config/extensions.php`.
+
+- Passa: o `README.md` com a árvore de `core/` sem a linha `config/extensions.php`.
+- Falha: o `README.md` antigo, com `` `-- config/extensions.php # Registra extensões próprias e overrides do projeto.``.
+
 Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) cita `Permission.php`,
 `ProjectCode`, `ExampleTaskHandler`, `example.ping` ou `Exemplos didaticos`. O README troca a seção
 "Exemplos didaticos" por "O que já vem em `app/`".
@@ -1063,7 +1111,9 @@ Todas as checagens de referências seguem
   - os [testes movidos para `tests-skeleton/`](#testes-movidos-para-tests-skeleton): o bloco do APCu no
     `Dockerfile` e no overlay `core/compose/apcu.yml`, o `composer.lock` versionado, a ordem do build no
     `Dockerfile` sem `composer update` e o `env_file` opcional do `docker-compose.yml`;
-  - o [`core/bootstrap/app.php`](#corebootstrapappphp) sem `loadEnvironmentExtensions`.
+  - o [`core/bootstrap/app.php`](#corebootstrapappphp) sem `loadEnvironmentExtensions`, com o
+    [conteúdo exato](#lista-de-extensões-do-projeto-no-appphp), sem o `core/config/extensions.php` e sem citação a
+    `config/extensions.php` nos arquivos entregues.
 - O `composer.json`: `elavora/api-framework` com restrição que começa com `^2.`, sem `dev-` nem chave
   `repositories`; `elavora/code-standards` em `require-dev`, com restrição que começa com `^1.` e minor 1 ou
   maior; o script `lint` igual a `elavora-standards lint`; a ausência de `tools/lint.php`; os callbacks

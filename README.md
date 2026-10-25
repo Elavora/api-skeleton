@@ -47,9 +47,8 @@ app/
 |-- Support/          # Helpers internos pequenos e reutilizáveis.
 `-- Worker/           # Handlers e registro de tarefas executadas em fila.
 core/
-|-- bootstrap/app.php     # Monta Application, extensões e rotas.
-|-- compose/              # Overlays opcionais do Docker Compose.
-`-- config/extensions.php # Registra extensões próprias e overrides do projeto.
+|-- bootstrap/app.php     # Monta Application, registra extensões do projeto e rotas.
+`-- compose/              # Overlays opcionais do Docker Compose.
 public/index.php          # Única entrada exposta pelo servidor HTTP.
 worker.php                # Entrada CLI para consumo de filas.
 tests/                    # Testes da aplicação.
