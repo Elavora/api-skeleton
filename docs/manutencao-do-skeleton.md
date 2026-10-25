@@ -392,6 +392,22 @@ Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skele
 
 A cobertura medida pelo CI não muda: ela conta só o código de `app/`, e esses testes não executavam nada de `app/`.
 
+### `core/bootstrap/app.php`
+
+O `app.php` entregue deixa o framework carregar as extensões selecionadas no `.env`. É o que o README promete:
+"o bootstrap registra sozinho as extensões instaladas e selecionadas no `.env`".
+
+Para isso, o `app.php` não passa o argumento `loadEnvironmentExtensions` ao `ApplicationBootstrap::create`, e vale o
+padrão do framework. A regra confere o texto do arquivo: o `core/bootstrap/app.php` não contém
+`loadEnvironmentExtensions` em nenhum lugar, nem em comentário.
+
+- Passa: o `app.php` atual, que chama `ApplicationBootstrap::create(basePath: ..., extensions: ..., configure: ...)`.
+- Falha: `ApplicationBootstrap::create(..., loadEnvironmentExtensions: false)`.
+- Falha também: `loadEnvironmentExtensions: true`. O valor repete o padrão, e a regra é não citar o argumento.
+
+Antes, os testes que repetiam o framework davam essa garantia de passagem. Agora ela é uma checagem de conteúdo em
+`tests-skeleton/`, que não depende das mensagens de erro do framework.
+
 Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) cita `Permission.php`,
 `ProjectCode`, `ExampleTaskHandler`, `example.ping` ou `Exemplos didaticos`. O README troca a seção
 "Exemplos didaticos" por "O que já vem em `app/`".
@@ -774,7 +790,8 @@ Todas as checagens de referências seguem
     arquivos de exemplo e de seus testes, e nenhuma citação aos exemplos nos arquivos entregues;
   - conteúdo de `tests/` igual à tabela de [O que fica em `tests/`](#o-que-fica-em-tests), a ausência dos
     [testes que repetiam o framework](#testes-que-repetiam-o-framework) e nenhuma citação a eles nos arquivos
-    entregues.
+    entregues;
+  - o [`core/bootstrap/app.php`](#corebootstrapappphp) sem `loadEnvironmentExtensions`.
 - O `composer.json`: `elavora/api-framework` com restrição que começa com `^2.`, sem `dev-` nem chave
   `repositories`; `elavora/code-standards` em `require-dev`, com restrição que começa com `^1.` e minor 1 ou
   maior; o script `lint` igual a `elavora-standards lint`; a ausência de `tools/lint.php`; os callbacks
