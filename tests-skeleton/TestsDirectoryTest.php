@@ -23,10 +23,8 @@ final class TestsDirectoryTest extends TestCase
 {
     /** Tabela "O que fica em `tests/`", em ordem alfabética. */
     private const TESTS_FILES = [
-        'tests/ApcuDockerConfigurationTest.php',
         'tests/ConventionRouteTest.php',
         'tests/HealthEndpointTest.php',
-        'tests/ProjectConfigurationTest.php',
         'tests/bootstrap.php',
     ];
 

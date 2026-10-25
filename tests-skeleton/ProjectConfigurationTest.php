@@ -2,16 +2,31 @@
 
 declare(strict_types=1);
 
-use PHPUnit\Framework\TestCase;
+namespace SkeletonTests;
 
+use PHPUnit\Framework\TestCase;
+use SkeletonTests\Support\Skeleton;
+
+/**
+ * `composer.lock`, ordem do build no `Dockerfile` e `env_file` opcional do `docker-compose.yml` entregues pelo
+ * skeleton.
+ *
+ * Saiu de `tests/` porque confere arquivos do skeleton, e não a aplicação.
+ *
+ * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+ * @see docs/manutencao-do-skeleton.md#teste-de-arquivo-do-skeleton-fica-em-tests-skeleton
+ */
 final class ProjectConfigurationTest extends TestCase
 {
+    /**
+     * O `composer.lock` existe, é JSON válido e tem `content-hash`, `packages` e `packages-dev`.
+     *
+     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+     */
     public function testComposerLockIsVersionedForTheProject(): void
     {
-        $lockPath = dirname(__DIR__) . '/composer.lock';
-
-        self::assertFileExists($lockPath);
-        $lock = json_decode((string) file_get_contents($lockPath), true, flags: JSON_THROW_ON_ERROR);
+        self::assertFileExists(Skeleton::path('composer.lock'));
+        $lock = json_decode(Skeleton::read('composer.lock'), true, flags: JSON_THROW_ON_ERROR);
 
         self::assertIsArray($lock);
         self::assertArrayHasKey('content-hash', $lock);
@@ -19,9 +34,15 @@ final class ProjectConfigurationTest extends TestCase
         self::assertArrayHasKey('packages-dev', $lock);
     }
 
+    /**
+     * No `Dockerfile`, a cópia do lock vem antes do `composer install`, que vem antes do `COPY . .`, e não há
+     * `composer update`.
+     *
+     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+     */
     public function testDockerBuildInstallsTheVersionedLockBeforeCopyingTheApplication(): void
     {
-        $dockerfile = (string) file_get_contents(dirname(__DIR__) . '/Dockerfile');
+        $dockerfile = Skeleton::read('Dockerfile');
         $copyDependencies = strpos($dockerfile, 'COPY composer.json composer.lock ./');
         $install = strpos(
             $dockerfile,
@@ -37,9 +58,14 @@ final class ProjectConfigurationTest extends TestCase
         self::assertStringNotContainsString('composer update', $dockerfile);
     }
 
+    /**
+     * O `docker-compose.yml` injeta o `.env` opcional pelo `env_file`.
+     *
+     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+     */
     public function testComposeInjectsOptionalEnvironmentFile(): void
     {
-        $compose = (string) file_get_contents(dirname(__DIR__) . '/docker-compose.yml');
+        $compose = Skeleton::read('docker-compose.yml');
 
         self::assertStringContainsString('path: ${ELAVORA_ENV_FILE:-.env}', $compose);
         self::assertStringContainsString('required: false', $compose);

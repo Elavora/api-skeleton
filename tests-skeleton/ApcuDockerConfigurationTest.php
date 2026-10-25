@@ -2,13 +2,29 @@
 
 declare(strict_types=1);
 
-use PHPUnit\Framework\TestCase;
+namespace SkeletonTests;
 
+use PHPUnit\Framework\TestCase;
+use SkeletonTests\Support\Skeleton;
+
+/**
+ * Bloco do APCu no `Dockerfile` e no overlay `core/compose/apcu.yml` entregues pelo skeleton.
+ *
+ * Saiu de `tests/` porque confere arquivos do skeleton, e não a aplicação.
+ *
+ * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+ * @see docs/manutencao-do-skeleton.md#teste-de-arquivo-do-skeleton-fica-em-tests-skeleton
+ */
 final class ApcuDockerConfigurationTest extends TestCase
 {
+    /**
+     * O bloco do APCu no `Dockerfile` vem antes do bloco do MySQL, habilita a extensão e liga `apc.enable_cli`.
+     *
+     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+     */
     public function testApcuInstallationEnablesTheExtensionForPhpCli(): void
     {
-        $dockerfile = (string) file_get_contents(dirname(__DIR__) . '/Dockerfile');
+        $dockerfile = Skeleton::read('Dockerfile');
         $apcuBlockStart = strpos($dockerfile, 'if [ "$INSTALL_APCU" = "1" ]; then');
         $mysqlBlockStart = strpos($dockerfile, 'if [ "$INSTALL_MYSQL" = "1" ]; then');
 
@@ -25,9 +41,14 @@ final class ApcuDockerConfigurationTest extends TestCase
         );
     }
 
+    /**
+     * O overlay `core/compose/apcu.yml` liga o build do APCu e o driver de cache.
+     *
+     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+     */
     public function testApcuComposeOverlayEnablesTheBuildAndRuntimeConfiguration(): void
     {
-        $overlay = (string) file_get_contents(dirname(__DIR__) . '/core/compose/apcu.yml');
+        $overlay = Skeleton::read('core/compose/apcu.yml');
 
         self::assertStringContainsString('INSTALL_APCU: 1', $overlay);
         self::assertStringContainsString('CACHE_DRIVER: apcu', $overlay);
