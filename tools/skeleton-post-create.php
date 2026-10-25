@@ -15,7 +15,6 @@ const SKELETON_ONLY = [
     '.github/workflows/skeleton-release.yml',
     '.github/workflows/skeleton-sync-labels.yml',
     '.github/workflows/skeleton-tests.yml',
-    'docs/MIGRACAO-BOOTSTRAP.md',
     'docs/manutencao-do-skeleton.md',
     'tests-skeleton',
     'tools/skeleton-post-create.php',
