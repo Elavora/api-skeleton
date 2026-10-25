@@ -499,10 +499,12 @@ O bloco do skeleton (de `<!-- skeleton:inicio -->` até `<!-- skeleton:fim -->`)
 
 #### Links para a doc do framework
 
-O `docs/USO.md` contém estes dois links, exatamente:
+O `docs/USO.md` contém estes três links, exatamente:
 
 - `https://github.com/Elavora/api-framework/blob/main/docs/BOOTSTRAP.md`
 - `https://github.com/Elavora/api-framework/blob/main/docs/ROTEAMENTO.md`
+- `https://github.com/Elavora/api-framework/blob/main/src/Bootstrap/EnvironmentExtensions.php`, a referência das
+  variáveis do [`.env.example`](#envexample)
 
 O `README.md`, fora do bloco do skeleton, contém o link `https://github.com/Elavora/api-framework#documentação`.
 
@@ -527,6 +529,151 @@ passo de troca da versão do PHP, que citava `8.4-latest`.
 
 - Passa: `ghcr.io/elavora/php-dev` e `ghcr.io/elavora/php-dev:8.3-latest` no `docs/ambiente-e-ci.md`.
 - Falha: `ghcr.io/elavora/php-dev:8.4-latest` em qualquer um dos três.
+
+### `.env.example`
+
+O `.env.example` é um exemplo de `.env` com várias variáveis, em grupos. Cada grupo diz de qual pacote é, e cada
+variável diz o que faz. Só `APP_DEBUG` e `APP_PORT` ficam ativas. As outras ficam comentadas, para a pessoa
+descomentar as do pacote que instalar.
+
+As variáveis das extensões são do framework (`src/Bootstrap/EnvironmentExtensions.php`), não do skeleton. A lista é
+copiada na criação e não se atualiza no projeto. Por isso o arquivo começa dizendo isso e aponta para o framework.
+
+Os testes conferem a forma do arquivo e que cada variável existe no framework ou no Compose. Eles não copiam a lista
+do framework: uma variável nova no framework não reprova nada.
+
+#### Grupos do `.env.example`
+
+1. O arquivo é uma sequência de grupos separados por exatamente uma linha vazia. Não há duas linhas vazias seguidas,
+   nem linha vazia no começo. O arquivo termina com uma quebra de linha.
+2. A primeira linha de cada grupo é um comentário (`# `) que cita pelo menos um pacote no formato
+   `elavora/<nome>` (`~elavora/[a-z0-9-]+~`).
+3. O primeiro grupo é o cabeçalho. Ele não tem variável, e contém estas duas linhas, exatamente:
+   - `# https://github.com/Elavora/api-framework/blob/main/src/Bootstrap/EnvironmentExtensions.php`
+   - `# https://github.com/Elavora/api-framework/blob/main/docs/BOOTSTRAP.md`
+4. O segundo grupo é o da aplicação. A primeira linha dele cita `elavora/api-framework` e `docker-compose.yml`. Ele
+   tem só `APP_DEBUG` e `APP_PORT`.
+
+- Passa: o [conteúdo exato](#conteúdo-exato-do-envexample) abaixo.
+- Falha: um grupo que começa direto por `# CACHE_DRIVER=apcu`, sem o comentário com o pacote.
+- Falha: um grupo cuja primeira linha é `# Cache.`, sem `elavora/<nome>`.
+- Falha: o cabeçalho sem um dos dois links.
+
+#### Variáveis do `.env.example`
+
+Uma linha de variável é ativa (`NOME=valor`) ou comentada (`# NOME=valor`), com `NOME` no formato `[A-Z][A-Z0-9_]*`.
+O valor pode ser vazio.
+
+1. Toda linha não vazia começa com `#` ou é uma variável ativa.
+2. As variáveis ativas são exatamente `APP_DEBUG=false` e `APP_PORT=8080`, nesta ordem.
+3. A linha logo acima de cada variável (ativa ou comentada) é um comentário que não é variável: a descrição do que ela
+   faz.
+4. Cada nome de variável aparece uma vez só no arquivo, contando ativas e comentadas.
+5. Cada nome de variável é lido pelo framework ou pelo Compose. Ou seja, aparece:
+   - entre aspas simples (`'NOME'`) em algum arquivo `.php` de `vendor/elavora/api-framework/src/Bootstrap/`; ou
+   - como `${NOME` no `docker-compose.yml` ou num arquivo de `core/compose/`.
+
+   `APP_DEBUG` vem do `ApplicationBootstrap.php`, `APP_PORT` do `docker-compose.yml`, e as outras do
+   `EnvironmentExtensions.php`.
+6. O arquivo não tem `ELAVORA_ENV_FILE`. O Compose lê essa variável do shell, para achar o `.env`, e dentro do
+   `.env` ela não serve. Ela passaria na regra 5, por isso a regra própria.
+
+A regra 5 lê o framework instalado em `vendor/`. Um PR do Dependabot dentro do mesmo major (`^2.`) não a reprova: tirar
+uma variável seria uma quebra para os projetos, e isso só acontece num major novo.
+
+- Passa: o conteúdo exato abaixo.
+- Falha: `# CACHE_DRIVER=apcu` e `# CACHE_DRIVER=redis` no mesmo arquivo (o nome aparece duas vezes).
+- Falha: `CACHE_DRIVER=apcu` sem `#` (variável ativa além das duas).
+- Falha: `# APP_NAME=api` (nenhum arquivo do framework nem do Compose lê `APP_NAME`).
+- Falha: `# REDIS_PORT=6379` logo depois de `# REDIS_HOST=redis`, sem descrição entre eles.
+- Falha: `# ELAVORA_ENV_FILE=.env` em qualquer lugar do arquivo.
+
+#### Conteúdo exato do `.env.example`
+
+É o conteúdo que o dev escreve. Os testes conferem as regras acima, não este texto.
+
+Os valores comentados são exemplos. Os de Redis e de banco são os que os overlays de `core/compose/` usam (serviço
+`redis` na porta `6379`; serviço `mysql` na porta `3306`, com banco, usuário e senha `app`). Os comentários não citam
+valores padrão do framework, que podem mudar.
+
+```dotenv
+# Exemplo de .env, lido pelo elavora/api-framework e pelo docker-compose.yml.
+# Esta lista foi copiada na criação do projeto e não se atualiza sozinha.
+# A referência das variáveis é o framework:
+# https://github.com/Elavora/api-framework/blob/main/src/Bootstrap/EnvironmentExtensions.php
+# https://github.com/Elavora/api-framework/blob/main/docs/BOOTSTRAP.md
+
+# Aplicação (elavora/api-framework e docker-compose.yml).
+# Liga o modo de depuração do framework: true ou false.
+APP_DEBUG=false
+# Porta do host em que o Docker Compose publica a API.
+APP_PORT=8080
+
+# Cache (elavora/api-cache-apcu ou elavora/api-cache-redis). Use um só dos dois.
+# Escolhe o cache: apcu ou redis. Vazio: nenhuma extensão de cache.
+# CACHE_DRIVER=apcu
+# Prefixo das chaves do cache.
+# CACHE_PREFIX=api:cache:
+# Tempo de vida das chaves, em segundos. Vazio: vale o padrão do pacote.
+# CACHE_TTL=60
+
+# Conexão Redis (elavora/api-cache-redis e elavora/api-queue-redis). Vale para o cache e para a fila.
+# Endereço do servidor Redis.
+# REDIS_HOST=redis
+# Porta do servidor Redis.
+# REDIS_PORT=6379
+# Senha do Redis. Vazio: sem senha.
+# REDIS_PASSWORD=
+# Número do banco do Redis. Vazio: vale o padrão do pacote.
+# REDIS_DATABASE=0
+
+# Fila Redis (elavora/api-queue-redis).
+# Prefixo das chaves da fila.
+# QUEUE_PREFIX=api:queue:
+
+# Banco de dados (elavora/api-database-mysql ou elavora/api-database-postgresql). Use um só dos dois.
+# Escolhe o banco: mysql ou postgresql. Vazio: nenhuma extensão de banco.
+# DB_DRIVER=mysql
+# Endereço do servidor do banco.
+# DB_HOST=mysql
+# Porta do servidor do banco.
+# DB_PORT=3306
+# Nome do banco.
+# DB_DATABASE=app
+# Usuário do banco.
+# DB_USERNAME=app
+# Senha do banco.
+# DB_PASSWORD=app
+
+# Log (elavora/api-log-stdout, elavora/api-log-file ou elavora/api-log-mongodb). Use um só dos três.
+# Escolhe o log: stdout, file ou mongodb. Vazio: nenhuma extensão de log.
+# LOG_DRIVER=stdout
+
+# Log na saída padrão (elavora/api-log-stdout).
+# Stream em que o log é escrito.
+# LOG_STREAM=stdout
+
+# Log em arquivo (elavora/api-log-file).
+# Caminho do arquivo de log.
+# LOG_FILE=storage/logs/app.log
+
+# Log no MongoDB (elavora/api-log-mongodb).
+# URI de conexão do MongoDB.
+# MONGO_LOG_URI=mongodb://mongo:27017
+# Endereço do servidor MongoDB.
+# MONGO_LOG_HOST=mongo
+# Porta do servidor MongoDB.
+# MONGO_LOG_PORT=27017
+# Nome do banco de log.
+# MONGO_LOG_DATABASE=api_logs
+# Nome da coleção de log.
+# MONGO_LOG_COLLECTION=logs
+# Usuário do MongoDB.
+# MONGO_LOG_USERNAME=
+# Senha do MongoDB.
+# MONGO_LOG_PASSWORD=
+
+```
 
 ### Regras de estilo
 
@@ -950,6 +1097,7 @@ Todas as checagens de referências seguem
 - A [Documentação entregue](#documentação-entregue): as [seções do `README.md`](#seções-do-readmemd), os
   [links para a doc do framework](#links-para-a-doc-do-framework) e
   [o que a doc entregue não diz](#o-que-a-doc-entregue-não-diz).
+- O [`.env.example`](#envexample): os [grupos](#grupos-do-envexample) e as [variáveis](#variáveis-do-envexample).
 - O `quality.yml` não tem `image` nem `php-dev`.
 
 ---

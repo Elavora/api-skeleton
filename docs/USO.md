@@ -28,9 +28,18 @@ padrões do framework.
 
 - `APP_DEBUG` é lido pelo framework.
 - `APP_PORT` é usado pelo Compose para publicar a porta da API (padrão `8080`).
-- As variáveis das extensões (cache, banco, log, fila) são lidas pelo framework. Ele registra sozinho as extensões
-  instaladas e selecionadas no `.env`. Veja o
+- As variáveis das extensões (cache, Redis, fila, banco, log) são lidas pelo framework. Ele registra sozinho as
+  extensões instaladas e selecionadas no `.env`. Veja o
   [Bootstrap compartilhado](https://github.com/Elavora/api-framework/blob/main/docs/BOOTSTRAP.md).
+
+O `.env.example` traz exemplos dessas variáveis, em grupos. O comentário no começo de cada grupo diz de qual pacote
+ele é, e o comentário acima de cada variável diz o que ela faz. Só `APP_DEBUG` e `APP_PORT` vêm ativas. As outras vêm
+comentadas: descomente as do pacote que instalar.
+
+A lista do `.env.example` foi copiada na criação do projeto e não se atualiza sozinha. A referência das variáveis é o
+framework: o
+[`EnvironmentExtensions.php`](https://github.com/Elavora/api-framework/blob/main/src/Bootstrap/EnvironmentExtensions.php)
+e o [Bootstrap compartilhado](https://github.com/Elavora/api-framework/blob/main/docs/BOOTSTRAP.md).
 
 Os blocos `environment` dos overlays valem mais que o `.env`.
 
