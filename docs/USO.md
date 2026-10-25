@@ -2,53 +2,81 @@
 
 [README](../README.md) · Próximo: [Ambiente de desenvolvimento e CI](ambiente-e-ci.md)
 
-Projeto inicial para APIs HTTP criadas com `elavora/api-framework`.
+Este guia explica os arquivos que o projeto recebe na criação. Como criar e rodar o projeto está no
+[README](../README.md#criação).
 
-## Instalação
+O comportamento do framework não é descrito aqui. Ele muda com as versões do framework, e a doc dele acompanha:
 
-```bash
-composer create-project elavora/api-skeleton minha-api
-cd minha-api
-cp .env.example .env
-docker compose up --build
-```
+- [Bootstrap compartilhado](https://github.com/Elavora/api-framework/blob/main/docs/BOOTSTRAP.md): como a aplicação
+  é montada e como as extensões são escolhidas pelas variáveis de ambiente;
+- [Segurança do roteamento](https://github.com/Elavora/api-framework/blob/main/docs/ROTEAMENTO.md): a convenção
+  `/controller/action` e o registro de rotas explícitas.
 
-Requisitos:
+## Dependências
 
-- PHP `>=8.3`
-- `elavora/api-framework` `^2.0`
-- Docker Compose 2.24 ou mais recente
-
-O projeto versiona `composer.lock`. Instalações, CI e o Dockerfile usam
-`composer install`, portanto reproduzem as mesmas versões.
+O projeto versiona o `composer.lock`. Instalações, CI e o `Dockerfile` usam `composer install`, portanto reproduzem
+as mesmas versões. Ao mudar dependências, atualize e revise o lock de propósito. Builds e pipelines usam sempre
+`composer install`, nunca `composer update`.
 
 O `composer.json` do projeto criado vem sem `name` e sem `description`, que eram do pacote do skeleton. Preencha os
 dois se for publicar o projeto como pacote.
 
-## Ambiente do Compose
+## Arquivo `.env`
 
-O serviço `api` carrega `.env` por `env_file`. O arquivo é opcional: sem ele, o
-bootstrap usa seus valores padrão. O Compose ainda usa `APP_PORT` para publicar
-a porta, e os blocos `environment` dos overlays prevalecem sobre o arquivo.
+O serviço `api` do `docker-compose.yml` carrega o `.env` por `env_file`. O arquivo é opcional: sem ele, valem os
+padrões do framework.
 
-Exemplo:
+- `APP_DEBUG` é lido pelo framework.
+- `APP_PORT` é usado pelo Compose para publicar a porta da API (padrão `8080`).
+- As variáveis das extensões (cache, banco, log, fila) são lidas pelo framework. Ele registra sozinho as extensões
+  instaladas e selecionadas no `.env`. Veja o
+  [Bootstrap compartilhado](https://github.com/Elavora/api-framework/blob/main/docs/BOOTSTRAP.md).
 
-```dotenv
-APP_DEBUG=true
-APP_PORT=8080
-LOG_DRIVER=stdout
-```
+Os blocos `environment` dos overlays valem mais que o `.env`.
 
-Instale `elavora/api-log-stdout` antes de selecionar esse driver. O `.env`
-permanece em `.gitignore` e `.dockerignore`, e nunca é copiado para a imagem.
+O `.env` fica no `.gitignore` e no `.dockerignore`, e nunca é copiado para a imagem.
 
-Em automação, `ELAVORA_ENV_FILE` pode apontar para outro arquivo:
+Em automação, `ELAVORA_ENV_FILE` aponta o `env_file` para outro arquivo:
 
 ```bash
 ELAVORA_ENV_FILE=/tmp/api-smoke.env docker compose --env-file /tmp/api-smoke.env config
 ```
 
-## Fluxo HTTP
+## Overlays do Docker Compose
+
+Cada arquivo de `core/compose/` liga um serviço ao `docker-compose.yml`. Ele instala na imagem PHP só a extensão que
+o serviço exige e define as variáveis no bloco `environment` do serviço `api`.
+
+| Overlay | Instala na imagem | Sobe o serviço | Pacote que ele espera |
+| --- | --- | --- | --- |
+| `core/compose/apcu.yml` | APCu | nenhum | `elavora/api-cache-apcu` |
+| `core/compose/redis.yml` | `ext-redis` | `redis` | `elavora/api-cache-redis` (e, se quiser fila, `elavora/api-queue-redis`) |
+| `core/compose/mysql.yml` | PDO MySQL | `mysql` | `elavora/api-database-mysql` |
+| `core/compose/postgresql.yml` | PDO PostgreSQL | `postgresql` | `elavora/api-database-postgresql` |
+
+Para usar um overlay, instale o pacote e informe o overlay ao Compose com `-f`. O Compose aplica os overlays na ordem
+recebida, sobre o `docker-compose.yml`:
+
+```bash
+composer require elavora/api-cache-redis
+docker compose -f docker-compose.yml -f core/compose/redis.yml up --build
+```
+
+Os overlays podem ser combinados:
+
+```bash
+docker compose -f docker-compose.yml -f core/compose/redis.yml -f core/compose/postgresql.yml up --build
+```
+
+Não combine `apcu.yml` com `redis.yml`. Os dois escolhem o cache, e o projeto usa um só.
+
+O `composer require` só funciona se o pacote tiver uma versão que aceite o `elavora/api-framework` travado no
+`composer.lock`. Se não tiver, o Composer recusa a instalação e diz o motivo.
+
+As outras extensões (logs, worker de fila, storage, DataTypes e outras) não têm overlay. Elas estão na
+[lista de pacotes da Elavora no Packagist](https://packagist.org/packages/elavora/).
+
+## Checagem de saúde
 
 Com o serviço iniciado:
 
@@ -57,12 +85,11 @@ curl --fail http://localhost:8080/health
 curl --fail http://localhost:8080/health/show
 ```
 
-Ambas as rotas respondem `{"status":"ok"}`. `/health` é um alias explícito;
-`/health/show` usa a convenção do framework e exige `#[Action]` em uma action
-pública de instância.
+As duas rotas respondem `{"status":"ok"}`. `/health` é um alias registrado em `app/Http/HttpRoutes.php`.
+`/health/show` chega ao `HealthController` pela convenção `/controller/action` do framework.
 
-Essas duas rotas são a checagem de saúde do projeto, não um exemplo. O job `Imagem Docker` do CI depende delas.
-Mantenha o `HealthController` e o alias `/health` em `app/Http/HttpRoutes.php`.
+As duas rotas são um exemplo prático e também a checagem de saúde do projeto. O job `Imagem Docker` do CI depende
+delas. Mantenha o `HealthController` e o alias `/health`.
 
 ## Tarefas de fila
 
@@ -86,19 +113,15 @@ composer lint
 composer analyse
 composer test
 composer check
-docker build -t api-skeleton .
+docker build -t minha-api .
 ```
 
-O `composer lint` roda o `elavora-standards lint`, do pacote `elavora/code-standards`. Ele roda `php -l` em todo
-arquivo `.php` do projeto, menos `vendor/` e arquivos e pastas que começam com ponto. Melhorias no lint chegam
-pelo PR do Dependabot que atualiza o pacote. Detalhes em
-[lint.md](https://github.com/Elavora/code-standards/blob/main/docs/lint.md).
+`composer check` roda o lint, o PHPStan e o PHPUnit.
 
-O PHPStan roda no nível 8 sem baseline. O entrypoint opcional de worker fica fora da análise estática enquanto
-`elavora/api-queue-worker` não estiver instalado, mas o lint confere a sintaxe dele.
-
-Ao mudar dependências, atualize e revise o lock deliberadamente. Builds e
-pipelines devem continuar usando `composer install`, nunca `composer update`.
+- O `composer lint` roda o `elavora-standards lint`, do pacote `elavora/code-standards`. O que ele confere está em
+  [lint.md](https://github.com/Elavora/code-standards/blob/main/docs/lint.md).
+- O PHPStan roda no nível 8, sem baseline. O `worker.php` e o `app/Worker/` ficam fora da análise enquanto o
+  `elavora/api-queue-worker` não estiver instalado. O lint confere a sintaxe deles.
 
 ### Testes
 

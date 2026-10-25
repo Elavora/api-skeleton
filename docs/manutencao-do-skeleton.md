@@ -25,10 +25,12 @@ Essa última regra orienta tudo aqui. Um erro copiado para um projeto só sai de
      comentário de versão;
    - **por tag que acompanha as estáveis**, sem PR: a imagem `ghcr.io/elavora/php-dev` na tag `8.3-latest`, usada
      pelo Dev Container e, por padrão, pelo pipeline central;
-3. nenhuma referência copiada aponta para `main`, para uma branch ou para uma tag beta;
+3. nenhuma referência copiada (pacote, workflow, action ou imagem) aponta para `main`, para uma branch ou para uma
+   tag beta. Links da documentação entregue para a doc de outro repositório são a exceção: eles apontam para a
+   `main`, para a pessoa ler a versão atual (veja [Documentação entregue](#documentação-entregue));
 4. a versão do PHP, e a de cada serviço do Compose, é uma decisão do projeto. Ela é a mesma em produção, no Dev
    Container e no CI. Por isso o Dependabot não cuida de imagens Docker: ele trocaria a versão num lugar só. O
-   projeto troca todos os lugares juntos, como descreve [Versão do PHP](ambiente-e-ci.md#versão-do-php);
+   projeto troca todos os lugares juntos;
 5. a documentação entregue não cita SHA nem tag fixa da imagem. Ela aponta para o arquivo onde a referência está.
    Os valores exatos ficam nesta página, que não é entregue.
 
@@ -41,8 +43,9 @@ grupos:
 | **Entrega** | `app/`, `core/`, `tests/`, `.devcontainer/`, `.github/workflows/quality.yml`, `.github/dependabot.yml`, `.editorconfig`, `.php-cs-fixer.dist.php`, `phpunit.xml`, `docs/USO.md`, `docs/ambiente-e-ci.md` | sim, e passa a ser do projeto |
 | **Só do skeleton** | `.github/workflows/skeleton-*.yml`, `tests-skeleton/`, esta página, o script de limpeza | não, é removido na criação |
 
-A explicação da entrega para quem usa o projeto está em [Ambiente de desenvolvimento e CI](ambiente-e-ci.md). Lá
-está a tabela do que fica congelado e de como cada item se atualiza.
+A explicação da entrega para quem usa o projeto está no [Guia de uso](USO.md) e em
+[Ambiente de desenvolvimento e CI](ambiente-e-ci.md). O que a doc entregue diz, e o que ela não diz, está em
+[Documentação entregue](#documentação-entregue).
 
 O conteúdo exato da entrega está na [Referência da entrega](#referência-da-entrega), mais abaixo.
 
@@ -446,8 +449,9 @@ A cobertura medida pelo CI não muda: ela conta só o código de `app/`, e esses
 
 ### `core/bootstrap/app.php`
 
-O `app.php` entregue deixa o framework carregar as extensões selecionadas no `.env`. É o que o README promete:
-"o bootstrap registra sozinho as extensões instaladas e selecionadas no `.env`".
+O `app.php` entregue deixa o framework carregar as extensões selecionadas no `.env`. É o que o
+[Guia de uso](USO.md#arquivo-env) promete: o framework "registra sozinho as extensões instaladas e selecionadas no
+`.env`".
 
 Para isso, o `app.php` não passa o argumento `loadEnvironmentExtensions` ao `ApplicationBootstrap::create`, e vale o
 padrão do framework. A regra confere o texto do arquivo: o `core/bootstrap/app.php` não contém
@@ -463,6 +467,66 @@ Antes, os testes que repetiam o framework davam essa garantia de passagem. Agora
 Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) cita `Permission.php`,
 `ProjectCode`, `ExampleTaskHandler`, `example.ping` ou `Exemplos didaticos`. O README troca a seção
 "Exemplos didaticos" por "O que já vem em `app/`".
+
+### Documentação entregue
+
+A documentação entregue é o `README.md` (fora do bloco do skeleton), o `docs/USO.md` e o `docs/ambiente-e-ci.md`.
+Ela descreve só os arquivos que o projeto recebe. O comportamento do framework (bootstrap, extensões escolhidas pelo
+ambiente, rotas) fica na doc do framework, e a doc entregue aponta para ela. Uma cópia ficaria parada no projeto e
+errada quando o framework mudasse.
+
+O skeleton é só o ponto de partida. Não existe guia de como atualizar um projeto já criado, porque o skeleton não
+envia atualizações. Por isso a doc entregue não tem tabela do que se atualiza e como, nem passo a passo para trocar a
+versão do PHP ou a dos serviços.
+
+#### Seções do `README.md`
+
+Fora do bloco do skeleton, o `README.md` tem exatamente estas seções `##`, nesta ordem:
+
+1. `## Requisitos`
+2. `## Criação`
+3. `## Estrutura`, com a subseção `` ### O que já vem em `app/` ``
+4. `## Documentação`
+
+O bloco do skeleton (de `<!-- skeleton:inicio -->` até `<!-- skeleton:fim -->`) vem depois delas e tem a seção
+`## Só no repositório do skeleton`.
+
+- Passa: o `README.md` atual.
+- Falha: um `README.md` com `## Extensões opcionais`, `## Qualidade e build`, `## Atualização do bootstrap` ou
+  `## Ambiente de desenvolvimento e CI` fora do bloco. Esses assuntos estão no `docs/USO.md`, no
+  `docs/ambiente-e-ci.md` ou na doc do framework.
+- Falha: as quatro seções em outra ordem, ou faltando uma delas.
+
+#### Links para a doc do framework
+
+O `docs/USO.md` contém estes dois links, exatamente:
+
+- `https://github.com/Elavora/api-framework/blob/main/docs/BOOTSTRAP.md`
+- `https://github.com/Elavora/api-framework/blob/main/docs/ROTEAMENTO.md`
+
+O `README.md`, fora do bloco do skeleton, contém o link `https://github.com/Elavora/api-framework#documentação`.
+
+Os links apontam para a `main` do framework, e não para uma tag. Uma tag deixaria a pessoa lendo a doc de uma versão
+antiga.
+
+#### O que a doc entregue não diz
+
+Nenhum dos três arquivos tem uma linha de título (`##`, `###` ou `####`) com um destes textos:
+
+- `O que fica no projeto e como atualizar`
+- `Versão do PHP`
+- `Versões dos serviços`
+- `Atualização do bootstrap`
+
+Nenhum dos três contém o texto `nenhuma extensão tem versão que aceite`. Era um aviso com data: ficaria errado no
+projeto quando as extensões aceitassem o framework 2.
+
+Sobre a imagem de desenvolvimento, a doc entregue pode citar `ghcr.io/elavora/php-dev` sem tag e
+`ghcr.io/elavora/php-dev:8.3-latest`. Nenhuma outra tag, nem outra versão com `-latest`: a doc não tem mais o passo a
+passo de troca da versão do PHP, que citava `8.4-latest`.
+
+- Passa: `ghcr.io/elavora/php-dev` e `ghcr.io/elavora/php-dev:8.3-latest` no `docs/ambiente-e-ci.md`.
+- Falha: `ghcr.io/elavora/php-dev:8.4-latest` em qualquer um dos três.
 
 ### Regras de estilo
 
@@ -883,6 +947,9 @@ Todas as checagens de referências seguem
   Também os casos de marcadores incompletos e de caminhos já ausentes.
 - A documentação entregue (`README.md` fora do bloco do skeleton, `docs/USO.md` e `docs/ambiente-e-ci.md`) não cita
   `8.3-0.`, nenhuma sequência de 40 caracteres hexadecimais nem `manutencao-do-skeleton.md`.
+- A [Documentação entregue](#documentação-entregue): as [seções do `README.md`](#seções-do-readmemd), os
+  [links para a doc do framework](#links-para-a-doc-do-framework) e
+  [o que a doc entregue não diz](#o-que-a-doc-entregue-não-diz).
 - O `quality.yml` não tem `image` nem `php-dev`.
 
 ---
