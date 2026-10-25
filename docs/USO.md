@@ -85,6 +85,31 @@ O `composer require` só funciona se o pacote tiver uma versão que aceite o `el
 As outras extensões (logs, worker de fila, storage, DataTypes e outras) não têm overlay. Elas estão na
 [lista de pacotes da Elavora no Packagist](https://packagist.org/packages/elavora/).
 
+## Extensões do projeto
+
+Há dois jeitos de uma extensão entrar na aplicação:
+
+- **Extensões selecionadas no `.env`.** O framework registra sozinho as extensões instaladas e escolhidas pelas
+  variáveis de ambiente (cache, banco, log, fila). Não escreva nada no código para elas.
+- **Extensões do projeto.** Uma extensão que o projeto escreve, ou uma que substitui uma configuração, entra na lista
+  `extensions:` do `core/bootstrap/app.php`. A lista começa vazia.
+
+Para registrar uma extensão do projeto, coloque a instância na lista:
+
+```php
+return ApplicationBootstrap::create(
+    basePath: dirname(__DIR__, 2),
+    extensions: [
+        new MinhaExtension(),
+    ],
+    configure: HttpRoutes::register(...),
+);
+```
+
+Não coloque na lista uma extensão que o `.env` já seleciona: ela seria registrada duas vezes. A ordem em que o
+framework registra as extensões está no
+[Bootstrap compartilhado](https://github.com/Elavora/api-framework/blob/main/docs/BOOTSTRAP.md).
+
 ## Checagem de saúde
 
 Com o serviço iniciado:
