@@ -179,6 +179,4 @@ um projeto é criado com `composer create-project`.
 
 - [Manutenção do skeleton](docs/manutencao-do-skeleton.md): o que é entregue e o que é só do skeleton, como as
   versões são publicadas, a limpeza na criação e o conteúdo exato da entrega.
-- [Migração para o bootstrap compartilhado](docs/MIGRACAO-BOOTSTRAP.md): como adaptar um projeto criado com a
-  estrutura 1.0 do skeleton.
 <!-- skeleton:fim -->
