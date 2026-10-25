@@ -226,9 +226,11 @@ final class PostCreateScriptTest extends TestCase
             self::assertArrayHasKey($path, $before, "arquivo novo criado pelo script: {$path}");
         }
 
-        // 6 caminhos removidos + README + .gitattributes + composer.json + composer.lock + o próprio script + tools/.
+        // 5 caminhos removidos + README + .gitattributes + composer.json + composer.lock + o próprio script + tools/.
+        // @see docs/manutencao-do-skeleton.md#toolsskeleton-post-createphp (passo 7: uma linha por item)
+        // @see docs/manutencao-do-skeleton.md#arquivos-só-do-skeleton (SKELETON_ONLY: 6 caminhos, um é o script)
         $lines = self::outputLines($result['stdout']);
-        self::assertCount(12, $lines, "uma linha por item removido ou alterado:\n" . $result['stdout']);
+        self::assertCount(11, $lines, "uma linha por item removido ou alterado:\n" . $result['stdout']);
         self::assertSame(
             ['alterado: composer.json', 'alterado: composer.lock'],
             array_values(array_filter($lines, static fn(string $l): bool => str_starts_with($l, 'alterado: composer.'))),
