@@ -17,6 +17,7 @@ use SkeletonTests\Support\Skeleton;
  * @see docs/manutencao-do-skeleton.md#envexample
  * @see docs/manutencao-do-skeleton.md#grupos-do-envexample
  * @see docs/manutencao-do-skeleton.md#variáveis-do-envexample
+ * @see docs/manutencao-do-skeleton.md#interpolação-do-compose
  */
 final class EnvExampleTest extends TestCase
 {
@@ -34,6 +35,9 @@ final class EnvExampleTest extends TestCase
 
     /** Variáveis ativas, nesta ordem. */
     private const ACTIVE_LINES = ['APP_DEBUG=false', 'APP_PORT=8080'];
+
+    /** `.env.example` só com `APP_PORT`, para os casos de interpolação do Compose. */
+    private const APP_PORT_ONLY = "# Porta do host em que o Compose publica a API.\nAPP_PORT=8080\n";
 
     /**
      * Exemplo mínimo que segue todas as regras. Os casos que falham são mutações dele.
@@ -88,6 +92,7 @@ final class EnvExampleTest extends TestCase
      * Regra 5: cada nome do `.env.example` é lido pelo framework instalado ou pelo Compose.
      *
      * @see docs/manutencao-do-skeleton.md#variáveis-do-envexample
+     * @see docs/manutencao-do-skeleton.md#interpolação-do-compose
      */
     public function testEveryEnvExampleVariableIsReadByTheFrameworkOrCompose(): void
     {
@@ -212,6 +217,7 @@ final class EnvExampleTest extends TestCase
      * Regra 5: `# APP_NAME=api` falha, porque nem o framework nem o Compose leem `APP_NAME`.
      *
      * @see docs/manutencao-do-skeleton.md#variáveis-do-envexample
+     * @see docs/manutencao-do-skeleton.md#interpolação-do-compose
      */
     public function testVariableNotReadByTheFrameworkOrComposeIsRejected(): void
     {
@@ -223,14 +229,72 @@ final class EnvExampleTest extends TestCase
 
     /**
      * Regra 5: `APP_DEBUG` vem do framework (`'APP_DEBUG'` num `.php` do bootstrap) e `APP_PORT` do Compose
-     * (`${APP_PORT`).
+     * (`${APP_PORT` com o nome inteiro, seguido de `}`, `:`, `-`, `?` ou `+`).
      *
      * @see docs/manutencao-do-skeleton.md#variáveis-do-envexample
+     * @see docs/manutencao-do-skeleton.md#interpolação-do-compose
      */
     public function testApplicationVariablesComeFromTheFrameworkAndCompose(): void
     {
         self::assertStringContainsString("'APP_DEBUG'", implode("\n", self::frameworkSources()));
-        self::assertStringContainsString('${APP_PORT', implode("\n", self::composeSources()));
+        self::assertMatchesRegularExpression('~\$\{APP_PORT[}:?+-]~', implode("\n", self::composeSources()));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function composeReadsAppPort(): iterable
+    {
+        yield '${APP_PORT}' => ['${APP_PORT}'];
+        yield '${APP_PORT:-8080}' => ['"${APP_PORT:-8080}:8080"'];
+        yield '${APP_PORT-8080}' => ['${APP_PORT-8080}'];
+        yield '${APP_PORT:?defina a porta}' => ['${APP_PORT:?defina a porta}'];
+        yield '${APP_PORT?defina a porta}' => ['${APP_PORT?defina a porta}'];
+        yield '${APP_PORT:+8080}' => ['${APP_PORT:+8080}'];
+        yield '${APP_PORT+8080}' => ['${APP_PORT+8080}'];
+    }
+
+    /**
+     * Regra 5: cada forma de interpolação com chaves e o nome inteiro conta como leitura de `APP_PORT`.
+     *
+     * @param string $compose texto do Compose que lê `APP_PORT`
+     *
+     * @see docs/manutencao-do-skeleton.md#variáveis-do-envexample
+     * @see docs/manutencao-do-skeleton.md#interpolação-do-compose
+     */
+    #[DataProvider('composeReadsAppPort')]
+    public function testComposeInterpolationReadsTheVariable(string $compose): void
+    {
+        self::assertFrameworkDoesNotReadAppPort();
+        self::assertSame([], self::unreadNames(self::APP_PORT_ONLY, $compose));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function composeDoesNotReadAppPort(): iterable
+    {
+        yield 'só ${APP_PORT_EXTRA:-9090}' => ['"${APP_PORT_EXTRA:-9090}:8080"'];
+        yield 'só ${APP_PORTA}' => ['${APP_PORTA}'];
+        yield 'só $APP_PORT, sem chaves' => ['"$APP_PORT:8080"'];
+        yield 'nome ausente' => ['services: {}'];
+    }
+
+    /**
+     * Regra 5: um nome que é só o começo de outra variável, ou a forma sem chaves, não conta como leitura.
+     *
+     * @param string $compose texto do Compose que não lê `APP_PORT`
+     *
+     * @see docs/manutencao-do-skeleton.md#variáveis-do-envexample
+     * @see docs/manutencao-do-skeleton.md#interpolação-do-compose
+     */
+    #[DataProvider('composeDoesNotReadAppPort')]
+    public function testComposeInterpolationOfAnotherNameIsNotARead(string $compose): void
+    {
+        self::assertFrameworkDoesNotReadAppPort();
+        self::assertSame(['APP_PORT'], self::unreadNames(self::APP_PORT_ONLY, $compose));
+    }
+
+    /** Os casos de interpolação só fazem sentido se o framework não ler `APP_PORT`, como diz a doc. */
+    private static function assertFrameworkDoesNotReadAppPort(): void
+    {
+        self::assertStringNotContainsString("'APP_PORT'", implode("\n", self::frameworkSources()));
     }
 
     // ------------------------------------------------------------------ regras
@@ -375,19 +439,24 @@ final class EnvExampleTest extends TestCase
     }
 
     /**
-     * Regra 5: nomes que não aparecem como `'NOME'` no bootstrap do framework nem como `${NOME` no Compose.
+     * Regra 5: nomes que não aparecem como `'NOME'` no bootstrap do framework nem como `${NOME` seguido de `}`, `:`,
+     * `-`, `?` ou `+` no Compose.
      *
+     * @param string      $content conteúdo de `.env.example`
+     * @param string|null $compose texto do Compose; `null` usa os arquivos do skeleton (composeSources())
      * @return list<string>
+     *
+     * @see docs/manutencao-do-skeleton.md#interpolação-do-compose
      */
-    private static function unreadNames(string $content): array
+    private static function unreadNames(string $content, ?string $compose = null): array
     {
         $framework = implode("\n", self::frameworkSources());
-        $compose = implode("\n", self::composeSources());
+        $compose ??= implode("\n", self::composeSources());
 
         return array_values(array_filter(
             self::names(self::lines($content)),
             static fn(string $name): bool => !str_contains($framework, "'{$name}'")
-                && !str_contains($compose, '${' . $name),
+                && preg_match('~\$\{' . preg_quote($name, '~') . '[}:?+-]~', $compose) !== 1,
         ));
     }
 
