@@ -102,7 +102,8 @@ pipelines devem continuar usando `composer install`, nunca `composer update`.
 
 ### Testes
 
-Os testes de `tests/` são do seu projeto: conferem a aplicação e a configuração dela.
+Os testes de `tests/` são do seu projeto e conferem a aplicação. Os que vêm com o projeto conferem as rotas `/health`
+e `/health/show`. Escreva ao lado deles os testes do seu código.
 
 O comportamento do framework, como o bootstrap e a escolha das extensões pelo `.env`, é testado no próprio
 `elavora/api-framework`, na [pasta `tests/` do framework](https://github.com/Elavora/api-framework/tree/main/tests).

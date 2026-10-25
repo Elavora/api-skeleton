@@ -163,9 +163,23 @@ Para rodar os testes da entrega localmente, na raiz do repositório, no PowerShe
 docker run --rm --mount "type=bind,source=$($PWD.Path),target=/workspace" -w /workspace ghcr.io/elavora/php-dev:8.3-latest sh -lc 'git config --global --add safe.directory /workspace && composer install --no-interaction --prefer-dist && vendor/bin/phpunit -c tests-skeleton/phpunit.xml --exclude-group docker'
 ```
 
-Os testes de `tests/` são da aplicação e vão para o projeto criado. Teste que fala do skeleton em si (limpeza,
-workflows do skeleton, conteúdo da entrega) fica em `tests-skeleton/`. No projeto criado esses arquivos não existem,
-e o teste falharia.
+Os testes de `tests/` são da aplicação e vão para o projeto criado. Eles conferem o código de `app/`. Teste que fala
+do skeleton em si (limpeza, workflows do skeleton, conteúdo da entrega, arquivos como o `Dockerfile` e o Compose)
+fica em `tests-skeleton/`, que não vai para o projeto.
+
+### Teste de arquivo do skeleton fica em `tests-skeleton/`
+
+`tests/` não tem teste que confira o conteúdo de um arquivo do skeleton, como o `Dockerfile`, o
+`docker-compose.yml`, os overlays de `core/compose/`, o `composer.json` ou o `composer.lock`.
+
+Esses testes ficam em `tests-skeleton/`. O motivo: depois da criação, esses arquivos são do projeto. O projeto pode
+instalar outras extensões no `Dockerfile`, mudar o build ou trocar o Compose. Um teste copiado para `tests/`
+travaria a escolha do skeleton e falharia no CI do projeto na primeira mudança, sem que a aplicação estivesse
+errada.
+
+A conferência continua existindo, mas no lugar certo: ela garante que o skeleton entrega esses arquivos certos. Os
+testes que saíram de `tests/` por esse motivo estão em
+[Testes movidos para `tests-skeleton/`](#testes-movidos-para-tests-skeleton).
 
 ### Teste do framework fica no framework
 
@@ -368,13 +382,51 @@ Conteúdo de `tests/` (nada além disto):
 
 | Arquivo | O que confere |
 | --- | --- |
-| `tests/ApcuDockerConfigurationTest.php` | o bloco do APCu no `Dockerfile` e o overlay `core/compose/apcu.yml` |
 | `tests/ConventionRouteTest.php` | `/health/show`, pela convenção `/controller/action` |
 | `tests/HealthEndpointTest.php` | `/health` responde `{"status":"ok"}` sem extensões opcionais |
-| `tests/ProjectConfigurationTest.php` | o `composer.lock` versionado, o `Dockerfile` e o `env_file` do Compose |
 | `tests/bootstrap.php` | carrega o autoload do Composer |
 
 Os arquivos que ficam não mudam.
+
+#### Testes movidos para `tests-skeleton/`
+
+Estes dois testes saem de `tests/` e passam para `tests-skeleton/`, com o mesmo nome de arquivo e de classe. Eles
+conferem arquivos do skeleton, e não a aplicação (veja
+[Teste de arquivo do skeleton fica em `tests-skeleton/`](#teste-de-arquivo-do-skeleton-fica-em-tests-skeleton)):
+
+| Antes | Depois |
+| --- | --- |
+| `tests/ApcuDockerConfigurationTest.php` | `tests-skeleton/ApcuDockerConfigurationTest.php` |
+| `tests/ProjectConfigurationTest.php` | `tests-skeleton/ProjectConfigurationTest.php` |
+
+Nenhuma conferência se perde. Cada teste continua conferindo exatamente o mesmo de antes:
+
+**`ApcuDockerConfigurationTest`** (bloco do APCu):
+
+- no `Dockerfile`, o trecho `if [ "$INSTALL_APCU" = "1" ]; then` existe e vem antes de
+  `if [ "$INSTALL_MYSQL" = "1" ]; then`;
+- o texto entre esses dois trechos (o bloco do APCu) contém `docker-php-ext-enable apcu` e
+  `printf '%s\n' 'apc.enable_cli=1' > /usr/local/etc/php/conf.d/apcu-cli.ini`;
+- o overlay `core/compose/apcu.yml` contém `INSTALL_APCU: 1` e `CACHE_DRIVER: apcu`.
+
+**`ProjectConfigurationTest`** (lock, build e Compose):
+
+- o `composer.lock` existe, é JSON válido e tem as chaves `content-hash`, `packages` e `packages-dev`;
+- no `Dockerfile`, `COPY composer.json composer.lock ./` vem antes de
+  `RUN composer install --no-interaction --no-progress --prefer-dist --no-dev --optimize-autoloader`, que vem antes
+  de `COPY . .`;
+- o `Dockerfile` não contém `composer update`;
+- o `docker-compose.yml` contém `path: ${ELAVORA_ENV_FILE:-.env}` e `required: false` (o `.env` opcional do
+  `env_file`).
+
+O [`DockerfileTest`](#dockerfile) confere outra parte do `Dockerfile` (o estágio `dependencies` e a ausência do Git).
+Ele não cobre o bloco do APCu, a ordem até o `COPY . .`, o `composer update` nem o `env_file` do Compose. Por isso os
+dois testes são movidos inteiros, e não apagados.
+
+Os dois rodam no job `entrega` do `skeleton-tests.yml`. Não precisam de Docker, então não entram no grupo `docker`.
+
+A cobertura medida pelo CI do projeto não muda: ela conta só o código de `app/`, e esses testes não executavam nada
+de `app/`.
 
 #### Testes que repetiam o framework
 
@@ -791,6 +843,9 @@ Todas as checagens de referências seguem
   - conteúdo de `tests/` igual à tabela de [O que fica em `tests/`](#o-que-fica-em-tests), a ausência dos
     [testes que repetiam o framework](#testes-que-repetiam-o-framework) e nenhuma citação a eles nos arquivos
     entregues;
+  - os [testes movidos para `tests-skeleton/`](#testes-movidos-para-tests-skeleton): o bloco do APCu no
+    `Dockerfile` e no overlay `core/compose/apcu.yml`, o `composer.lock` versionado, a ordem do build no
+    `Dockerfile` sem `composer update` e o `env_file` opcional do `docker-compose.yml`;
   - o [`core/bootstrap/app.php`](#corebootstrapappphp) sem `loadEnvironmentExtensions`.
 - O `composer.json`: `elavora/api-framework` com restrição que começa com `^2.`, sem `dev-` nem chave
   `repositories`; `elavora/code-standards` em `require-dev`, com restrição que começa com `^1.` e minor 1 ou
