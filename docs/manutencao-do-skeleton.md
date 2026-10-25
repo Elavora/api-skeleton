@@ -156,9 +156,9 @@ O workflow `Testes do skeleton` (`.github/workflows/skeleton-tests.yml`) verific
   script de limpeza numa cópia do repositório;
 - **Build de produção**: confere que o `docker build` do `Dockerfile` (com `composer install --no-dev`) continua
   funcionando;
-- **Perfis de aplicação**: sobe a API com cada overlay de `core/compose/` e confere `/health`, a extensão PHP e as
-  classes esperadas;
 - **actionlint**: valida os workflows.
+
+Não há job de perfis de aplicação. Veja [Matriz de perfis fora do CI](#matriz-de-perfis-fora-do-ci).
 
 Para rodar os testes da entrega localmente, na raiz do repositório, no PowerShell:
 
@@ -169,6 +169,28 @@ docker run --rm --mount "type=bind,source=$($PWD.Path),target=/workspace" -w /wo
 Os testes de `tests/` são da aplicação e vão para o projeto criado. Eles conferem o código de `app/`. Teste que fala
 do skeleton em si (limpeza, workflows do skeleton, conteúdo da entrega, arquivos como o `Dockerfile` e o Compose)
 fica em `tests-skeleton/`, que não vai para o projeto.
+
+### Matriz de perfis fora do CI
+
+O `skeleton-tests.yml` não tem o job `perfis` (check `Perfil (base)`) nem nenhuma matriz (`strategy`/`matrix`).
+
+Por quê: só restava o perfil `base`, e ele fazia o mesmo que o job `Imagem Docker` do `quality.yml`, que também
+roda neste repositório. Os dois sobem a API com o `docker-compose.yml` e conferem que `/health` e `/health/show`
+respondem `{"status":"ok"}`. O `Perfil (base)` conferia ainda que a classe `Elavora\Api\Framework\Application`
+carrega; o `/health` só responde se o framework carrega, então isso já está coberto.
+
+A matriz volta junto com as extensões, quando os pacotes delas aceitarem o `elavora/api-framework` 2 (veja
+[Riscos e pendências](#riscos-e-pendências)). Quando voltar:
+
+- cada perfil sobe a API com o `docker-compose.yml` e o overlay de `core/compose/` dele;
+- confere `/health` e `/health/show`, a extensão PHP do perfil e as classes do pacote;
+- nenhum perfil troca o `elavora/api-framework` por uma branch: o framework vem do `composer.lock`;
+- os testes de `tests-skeleton/` voltam a conferir o job.
+
+Exemplo do que vale hoje:
+
+- certo: jobs `entrega`, `build-producao` e `actionlint`;
+- errado: um job `perfis`, um job com `name: Perfil (...)` ou uma matriz só com o perfil `base`.
 
 ### Teste de arquivo do skeleton fica em `tests-skeleton/`
 
@@ -244,9 +266,9 @@ os workflows. Depois de um PR do Dependabot, a tabela pode ficar com o valor ant
 - **PRs de fork** não recebem `id-token` e falham no início do pipeline central. Aceito: os projetos trabalham com
   branches internas.
 - **Perfis de aplicação e o framework 2.** Os pacotes de extensão ainda não têm versão que aceite
-  `elavora/api-framework` 2. As tags exigem versões `0.x`, e as branches `fix/estabiliza-pacote` exigem `^1.0`. Um perfil
-  cujo pacote não aceite o framework 2 sai da matriz até o pacote ter uma versão compatível, e isso é registrado no
-  PR. Hoje isso tira os perfis `apcu`, `redis`, `mysql` e `postgresql`. Fica o perfil `base`.
+  `elavora/api-framework` 2. As tags exigem versões `0.x`, e as branches `fix/estabiliza-pacote` exigem `^1.0`. Por
+  isso os perfis `apcu`, `redis`, `mysql` e `postgresql` saíram do CI, e o job `perfis` foi removido (veja
+  [Matriz de perfis fora do CI](#matriz-de-perfis-fora-do-ci)). A matriz volta com as extensões.
 
 ## Referência da entrega
 
@@ -914,7 +936,7 @@ template de PR: o da organização vale para os repositórios dela.
 | --- | --- | --- |
 | `.github/workflows/skeleton-release.yml` | arquivo | release por labels e Packagist |
 | `.github/workflows/skeleton-sync-labels.yml` | arquivo | sincronização de labels |
-| `.github/workflows/skeleton-tests.yml` | arquivo | testes da entrega, perfis e actionlint |
+| `.github/workflows/skeleton-tests.yml` | arquivo | testes da entrega, build de produção e actionlint |
 | `docs/manutencao-do-skeleton.md` | arquivo | esta página |
 | `tests-skeleton/` | pasta | testes da entrega |
 | `tools/skeleton-post-create.php` | arquivo | script de limpeza (apaga a si mesmo por último) |
@@ -1076,7 +1098,8 @@ Nenhum workflow do repositório pode citar o SHA antigo `1e0f42a92a4aafc35522709
 como atualiza o do `quality.yml`.
 
 **`skeleton-tests.yml`** (`name: Testes do skeleton`): gatilhos `pull_request` (`branches: [main]`), `push`
-(`branches: [main]`) e `workflow_dispatch`; `permissions: contents: read`. Jobs:
+(`branches: [main]`) e `workflow_dispatch`; `permissions: contents: read`. Tem exatamente três jobs, sem
+matriz (veja [Matriz de perfis fora do CI](#matriz-de-perfis-fora-do-ci)):
 
 - `entrega`: roda na imagem `ghcr.io/elavora/php-dev:8.3-latest`, como root, porque o workspace do runner pertence a
   outro UID (`COMPOSER_ALLOW_SUPERUSER: '1'`). Roda `composer install --no-interaction --no-progress --prefer-dist` e
@@ -1084,9 +1107,6 @@ como atualiza o do `quality.yml`.
 - `build-producao`: roda direto no `ubuntu-latest`, que já tem Docker, PHP e Composer. Roda
   `composer install --no-interaction --no-progress --prefer-dist` e
   `vendor/bin/phpunit -c tests-skeleton/phpunit.xml --group docker`;
-- `perfis`: a matriz `application-smoke` que estava no antigo `quality.yml`, com as mesmas verificações. Nenhum
-  perfil troca o `elavora/api-framework` por uma branch: o framework vem do `composer.lock`. Os perfis cujo pacote
-  não aceite o framework 2 saem da matriz (veja [Riscos e pendências](#riscos-e-pendências));
 - `actionlint`: roda o actionlint sobre `.github/workflows/`.
 
 ### O que `tests-skeleton/` verifica

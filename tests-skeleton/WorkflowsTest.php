@@ -196,6 +196,13 @@ final class WorkflowsTest extends TestCase
         self::assertTrue(Skeleton::isElavoraCallerLine($uses[0], 'sync-labels.yml'), $uses[0]);
     }
 
+    /**
+     * Gatilhos, permissões e os três jobs do `skeleton-tests.yml`.
+     *
+     * @see docs/manutencao-do-skeleton.md#workflows-só-do-skeleton
+     * @see docs/manutencao-do-skeleton.md#testes-da-entrega
+     * @see docs/manutencao-do-skeleton.md#matriz-de-perfis-fora-do-ci
+     */
     public function testSkeletonTestsWorkflow(): void
     {
         $yaml = self::workflow('skeleton-tests.yml');
@@ -207,9 +214,11 @@ final class WorkflowsTest extends TestCase
         self::assertMatchesRegularExpression('~^  workflow_dispatch:~m', $top);
         self::assertMatchesRegularExpression('~^permissions:\s*\n  contents:\s*read\s*$~m', $top);
 
-        foreach (['entrega', 'build-producao', 'perfis', 'actionlint'] as $job) {
-            self::assertContains($job, Skeleton::jobNames($yaml), "job {$job} ausente");
-        }
+        self::assertEqualsCanonicalizing(
+            ['entrega', 'build-producao', 'actionlint'],
+            Skeleton::jobNames($yaml),
+            'skeleton-tests.yml tem exatamente os jobs entrega, build-producao e actionlint',
+        );
 
         $entrega = (string) Skeleton::jobBlock($yaml, 'entrega');
         self::assertStringContainsString(Skeleton::DEV_IMAGE, $entrega);
@@ -223,14 +232,29 @@ final class WorkflowsTest extends TestCase
         self::assertStringContainsString('composer install --no-interaction --no-progress --prefer-dist', $build);
         self::assertStringContainsString('vendor/bin/phpunit -c tests-skeleton/phpunit.xml --group docker', $build);
 
-        $perfis = (string) Skeleton::jobBlock($yaml, 'perfis');
-        self::assertMatchesRegularExpression('~profile:\s*base\b~', $perfis);
-        self::assertStringContainsString('/health/show', $perfis);
-        self::assertStringNotContainsString('fix/estabiliza-pacote', $perfis);
-        self::assertStringNotContainsString('dev-', $perfis);
-        self::assertDoesNotMatchRegularExpression('~"elavora/api-framework"\s*:\s*"main"~', $perfis);
-
         $actionlint = (string) Skeleton::jobBlock($yaml, 'actionlint');
         self::assertStringContainsString('actionlint', $actionlint);
+    }
+
+    /**
+     * Sem o job `perfis` (check `Perfil (base)`) e sem matriz enquanto as extensões não aceitam o framework 2.
+     *
+     * @see docs/manutencao-do-skeleton.md#matriz-de-perfis-fora-do-ci
+     * @see docs/manutencao-do-skeleton.md#riscos-e-pendências
+     * @see docs/manutencao-do-skeleton.md#workflows-só-do-skeleton
+     */
+    public function testSkeletonTestsWorkflowHasNoProfileJobNorMatrix(): void
+    {
+        $yaml = self::workflow('skeleton-tests.yml');
+
+        self::assertNotContains('perfis', Skeleton::jobNames($yaml), 'o job perfis foi removido');
+        self::assertNull(Skeleton::jobBlock($yaml, 'perfis'), 'o job perfis foi removido');
+        self::assertDoesNotMatchRegularExpression(
+            '~^\s*name:\s*[\'"]?Perfil \(~m',
+            $yaml,
+            'nenhum job com name: Perfil (...)',
+        );
+        self::assertDoesNotMatchRegularExpression('~^\s*strategy:~m', $yaml, 'sem strategy');
+        self::assertStringNotContainsString('matrix', $yaml, 'sem matriz');
     }
 }
