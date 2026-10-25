@@ -590,7 +590,8 @@ uma variável seria uma quebra para os projetos, e isso só acontece num major n
 
 #### Conteúdo exato do `.env.example`
 
-É o conteúdo que o dev escreve. Os testes conferem as regras acima, não este texto.
+É o conteúdo que o dev escreve. Os testes conferem as regras acima, não este texto. O arquivo termina com
+uma única quebra de linha depois de `# MONGO_LOG_PASSWORD=`, sem linha vazia no fim.
 
 Os valores comentados são exemplos. Os de Redis e de banco são os que os overlays de `core/compose/` usam (serviço
 `redis` na porta `6379`; serviço `mysql` na porta `3306`, com banco, usuário e senha `app`). Os comentários não citam
@@ -672,7 +673,6 @@ APP_PORT=8080
 # MONGO_LOG_USERNAME=
 # Senha do MongoDB.
 # MONGO_LOG_PASSWORD=
-
 ```
 
 ### Regras de estilo
