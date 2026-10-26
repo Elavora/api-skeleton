@@ -581,10 +581,11 @@ O valor pode ser vazio.
 4. Cada nome de variável aparece uma vez só no arquivo, contando ativas e comentadas.
 5. Cada nome de variável é lido pelo framework ou pelo Compose. Ou seja, aparece:
    - entre aspas simples (`'NOME'`) em algum arquivo `.php` de `vendor/elavora/api-framework/src/Bootstrap/`; ou
-   - como `${NOME` no `docker-compose.yml` ou num arquivo de `core/compose/`.
+   - como [interpolação do Compose](#interpolação-do-compose) com o nome inteiro (`${NOME}`, `${NOME:-padrão}` e as
+     outras formas abaixo) no `docker-compose.yml` ou num arquivo de `core/compose/`.
 
-   `APP_DEBUG` vem do `ApplicationBootstrap.php`, `APP_PORT` do `docker-compose.yml`, e as outras do
-   `EnvironmentExtensions.php`.
+   `APP_DEBUG` vem do `ApplicationBootstrap.php`, `APP_PORT` do `docker-compose.yml` (`${APP_PORT:-8080}`), e as
+   outras do `EnvironmentExtensions.php`.
 6. O arquivo não tem `ELAVORA_ENV_FILE`. O Compose lê essa variável do shell, para achar o `.env`, e dentro do
    `.env` ela não serve. Ela passaria na regra 5, por isso a regra própria.
 
@@ -597,6 +598,35 @@ uma variável seria uma quebra para os projetos, e isso só acontece num major n
 - Falha: `# APP_NAME=api` (nenhum arquivo do framework nem do Compose lê `APP_NAME`).
 - Falha: `# REDIS_PORT=6379` logo depois de `# REDIS_HOST=redis`, sem descrição entre eles.
 - Falha: `# ELAVORA_ENV_FILE=.env` em qualquer lugar do arquivo.
+
+#### Interpolação do Compose
+
+Na regra 5, o Compose lê `NOME` quando o texto `${` é seguido do nome inteiro e, logo depois do nome, de um destes
+caracteres: `}`, `:`, `-`, `?` ou `+`. Isso cobre as formas de interpolação com chaves do Compose:
+
+| Forma | Exemplo com `APP_PORT` |
+| --- | --- |
+| `${NOME}` | `${APP_PORT}` |
+| `${NOME:-padrão}` e `${NOME-padrão}` | `${APP_PORT:-8080}`, `${APP_PORT-8080}` |
+| `${NOME:?erro}` e `${NOME?erro}` | `${APP_PORT:?defina a porta}`, `${APP_PORT?defina a porta}` |
+| `${NOME:+valor}` e `${NOME+valor}` | `${APP_PORT:+8080}`, `${APP_PORT+8080}` |
+
+Hoje os arquivos do Compose do skeleton usam só a forma `${NOME:-padrão}`: `${APP_PORT:-8080}` e
+`${ELAVORA_ENV_FILE:-.env}` no `docker-compose.yml`. Os arquivos de `core/compose/` não têm interpolação. As outras
+formas da tabela também contam, para a regra não mudar se um arquivo passar a usar uma delas.
+
+A comparação é pelo nome inteiro, não pelo começo dele. Um nome que é só o começo de outra variável do Compose não é
+lido por ela: `${APP_PORT_EXTRA}` não conta como leitura de `APP_PORT`. A forma sem chaves (`$NOME`) não conta: o
+skeleton não a usa.
+
+Exemplos, com `APP_PORT` no `.env.example` e o texto do Compose ao lado:
+
+- Passa: `"${APP_PORT:-8080}:8080"` (o `docker-compose.yml` atual).
+- Passa: `${APP_PORT}`, `${APP_PORT-8080}`, `${APP_PORT:?defina a porta}` ou `${APP_PORT:+8080}`.
+- Falha: só `${APP_PORT_EXTRA:-9090}` (o nome lido é `APP_PORT_EXTRA`, não `APP_PORT`).
+- Falha: só `${APP_PORTA}` (outro nome, que começa por `APP_PORT`).
+- Falha: só `$APP_PORT` (sem chaves).
+- Falha: o nome em nenhum arquivo do Compose nem do framework (como `APP_NAME` acima).
 
 #### Conteúdo exato do `.env.example`
 
