@@ -148,6 +148,33 @@ Os testes de `tests/` são da aplicação e vão para o projeto criado. Eles con
 do skeleton em si (limpeza, workflows do skeleton, conteúdo da entrega, arquivos como o `Dockerfile` e o Compose)
 fica em `tests-skeleton/`, que não vai para o projeto.
 
+### Arquivos que os testes tratam como entregues
+
+Os testes que procuram textos proibidos "em qualquer arquivo entregue" leem os arquivos de texto da árvore em disco,
+não a lista do Git. Ficam de fora:
+
+- todo caminho cujo primeiro componente seja `vendor`, `.git`, `node_modules`, `coverage`, `.phpunit.cache`,
+  `.phpstan.cache`, `.elavora` ou `.phpunit.result.cache`;
+- `composer.lock` e `.env`;
+- os [arquivos só do skeleton](#arquivos-só-do-skeleton), entre eles `tests-skeleton/` inteiro;
+- arquivos binários (com byte nulo).
+
+O `.phpunit.result.cache` da raiz guarda os nomes dos testes e dos data sets. Se ele vier de uma rodada dos testes de
+`tests-skeleton/` feita com o `phpunit.xml` da raiz, terá textos como `Permission.php`,
+`ExtensionConfigurationTest` e referências à imagem `php-dev` com outra tag. Se contasse como arquivo entregue, faria falhar as checagens de
+citação aos exemplos, aos testes removidos e à imagem de desenvolvimento.
+
+- Passa: com um `.phpunit.result.cache` na raiz que cita `Permission.php`, a lista de arquivos entregues não o
+  inclui, e os testes da entrega passam;
+- Passa: `tests-skeleton/.phpunit.result.cache` fica de fora, por estar em `tests-skeleton/`;
+- Falha: a lista de arquivos entregues inclui `.phpunit.result.cache`.
+
+A cópia do repositório usada no teste do script de limpeza não muda. Levar o cache para a cópia não afeta o
+resultado.
+
+Trocar a varredura do disco por `git ls-files` deixaria de fora qualquer arquivo não rastreado. É uma sugestão para
+depois, fora desta regra.
+
 ### Matriz de perfis fora do CI
 
 O `skeleton-tests.yml` não tem o job `perfis`, nenhum job com `name: Perfil (...)` nem matriz (`strategy`/`matrix`).
@@ -704,11 +731,31 @@ Conforme o contrato do `elavora/code-standards` (`docs/adocao.md` do pacote):
 - **`.editorconfig`**, na raiz, versionado. Ele tem exatamente um bloco, gerado pela sincronização, entre as linhas
   `# >>> elavora/code-standards >>>` e `# <<< elavora/code-standards <<<`. Não há nada fora do bloco. O arquivo é
   versionado para o editor funcionar antes do primeiro `composer install`.
-- **`.gitignore`** tem as linhas `/.elavora/` (pasta onde o CI baixa os scripts centrais) e `/.php-cs-fixer.php`
-  (override pessoal).
+- **`.gitignore`**: veja [Linhas do `.gitignore`](#linhas-do-gitignore).
 - `composer install` sobre o repositório recém-clonado não altera nenhum dos dois arquivos. Isso é conferido à mão.
   Não é teste automático, porque um PR do Dependabot pode mudar o bloco (veja
   [Atualizações do Dependabot não quebram os testes](#atualizações-do-dependabot-não-quebram-os-testes)).
+
+#### Linhas do `.gitignore`
+
+O `.gitignore` entregue tem, cada uma numa linha própria, exatamente com este texto:
+
+- `/.elavora/`: pasta onde o CI baixa os scripts centrais;
+- `/.php-cs-fixer.php`: override pessoal;
+- `.phpunit.result.cache`: cache de resultados do PHPUnit.
+
+Como os `phpunit.xml` não definem `cacheDirectory`, o PHPUnit grava o `.phpunit.result.cache` na pasta do
+`phpunit.xml` usado. Isso dá dois lugares: a raiz (`composer test`) e `tests-skeleton/`
+(`phpunit -c tests-skeleton/phpunit.xml`). A linha não tem barra, então vale nos dois. O `.gitignore` é entregue e
+não cita `tests-skeleton/`. Os `phpunit.xml` não mudam.
+
+Depois de rodar os testes, `git status --porcelain` não lista o cache:
+
+- Passa: `git check-ignore -q .phpunit.result.cache` termina com código 0;
+- Passa: `git check-ignore -q tests-skeleton/.phpunit.result.cache` termina com código 0;
+- Falha: um `.gitignore` só com `/.phpunit.result.cache`, porque o caminho de `tests-skeleton/` não é ignorado;
+- Falha: um `.gitignore` com `/tests-skeleton/.phpunit.result.cache`, porque cita uma pasta que só existe no
+  skeleton.
 
 ### `Dockerfile`
 
@@ -745,6 +792,15 @@ Exemplos:
 - falha: `RUN apk add --no-cache --virtual .composer-install-deps git`;
 - falha: `RUN apk add --no-cache git` em qualquer estágio;
 - falha: um pacote em `packages` do `composer.lock` só com `source` (tipo `git`) e sem `dist`.
+
+#### Linhas do `.dockerignore`
+
+O estágio final do `Dockerfile` faz `COPY . .`. Por isso o `.dockerignore` entregue tem uma linha com exatamente o
+texto `.phpunit.result.cache`, além das linhas que já existem (como `.phpunit.cache` e `.env`). Assim, um cache
+deixado por uma rodada local de testes não entra na imagem.
+
+- Passa: o `.dockerignore` tem a linha `.phpunit.result.cache`;
+- Falha: o `.dockerignore` só com `.phpunit.cache`, porque esse padrão é a pasta e não pega o arquivo.
 
 ### `.devcontainer/devcontainer.json`
 
@@ -1034,7 +1090,11 @@ Todas as checagens de referências seguem
   - campos do `devcontainer.json`;
   - chamador e job `imagem` do `quality.yml`, e os textos proibidos;
   - `dependabot.yml`, com só os itens `composer` e `github-actions`;
-  - stub do PHP-CS-Fixer, estrutura do `.editorconfig` e linhas do `.gitignore`;
+  - stub do PHP-CS-Fixer, estrutura do `.editorconfig`, [linhas do `.gitignore`](#linhas-do-gitignore) (com
+    `git check-ignore` do cache do PHPUnit na raiz e em `tests-skeleton/`) e
+    [linhas do `.dockerignore`](#linhas-do-dockerignore);
+  - a lista de [arquivos que os testes tratam como entregues](#arquivos-que-os-testes-tratam-como-entregues) sem o
+    `.phpunit.result.cache`;
   - `<source>` do `phpunit.xml`: só `app` no `<include>` e só `app/Worker` no `<exclude>`;
   - ausência dos workflows removidos;
   - conteúdo de `app/` igual à tabela de [`app/` e `tests/`](#app-e-tests), o `tasks.php` exato, a ausência dos
