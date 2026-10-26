@@ -140,4 +140,42 @@ final class DockerfileTest extends TestCase
     {
         self::assertSame($invalid, self::packagesWithoutZipDist($lock));
     }
+
+    // ------------------------------------------------------------------ .dockerignore
+
+    /** O .dockerignore tem a linha exata `.phpunit.result.cache`. */
+    private static function dockerignoreIgnoresPhpUnitCache(string $dockerignore): bool
+    {
+        return in_array('.phpunit.result.cache', array_map('trim', preg_split('~\R~', $dockerignore) ?: []), true);
+    }
+
+    /**
+     * O .dockerignore entregue tem a linha `.phpunit.result.cache`, para o `COPY . .` não levar o cache à imagem.
+     *
+     * @see docs/manutencao-do-skeleton.md#linhas-do-dockerignore
+     */
+    public function testDockerignoreHasPhpUnitResultCache(): void
+    {
+        $lines = array_map('trim', preg_split('~\R~', Skeleton::read('.dockerignore')) ?: []);
+
+        self::assertContains('.phpunit.result.cache', $lines);
+    }
+
+    /** @return iterable<string, array{string, bool}> */
+    public static function dockerignoreExamples(): iterable
+    {
+        yield 'passa: tem a linha .phpunit.result.cache' => [".phpunit.cache\n.phpunit.result.cache\n.env\n", true];
+        yield 'falha: só .phpunit.cache' => [".phpunit.cache\n.env\n", false];
+    }
+
+    /**
+     * Exemplos da doc: `.phpunit.cache` é a pasta e não pega o arquivo.
+     *
+     * @see docs/manutencao-do-skeleton.md#linhas-do-dockerignore
+     */
+    #[DataProvider('dockerignoreExamples')]
+    public function testDockerignoreRuleFollowsTheDocExamples(string $dockerignore, bool $valid): void
+    {
+        self::assertSame($valid, self::dockerignoreIgnoresPhpUnitCache($dockerignore));
+    }
 }

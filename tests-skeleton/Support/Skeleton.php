@@ -237,12 +237,26 @@ final class Skeleton
     /**
      * Arquivos de texto da entrega (o que vai para o projeto criado), relativos à raiz.
      *
+     * Lê a árvore em disco, não a lista do Git. Pula todo caminho cujo primeiro componente esteja em `$ignoredDirs`
+     * (inclusive o `.phpunit.result.cache` da raiz, que guarda nomes de testes de `tests-skeleton/`),
+     * `composer.lock`, `.env`, os arquivos só do skeleton e os binários.
+     *
+     * @see docs/manutencao-do-skeleton.md#arquivos-que-os-testes-tratam-como-entregues
      * @return list<string>
      */
     public static function deliveredTextFiles(): array
     {
         $root = self::root();
-        $ignoredDirs = ['vendor', '.git', 'node_modules', 'coverage', '.phpunit.cache', '.phpstan.cache', '.elavora'];
+        $ignoredDirs = [
+            'vendor',
+            '.git',
+            'node_modules',
+            'coverage',
+            '.phpunit.cache',
+            '.phpstan.cache',
+            '.elavora',
+            '.phpunit.result.cache',
+        ];
         $files = [];
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS),
