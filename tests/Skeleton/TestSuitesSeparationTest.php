@@ -113,7 +113,7 @@ final class TestSuitesSeparationTest extends TestCase
         }
         // Os testes da aplicacao em tests/ nao tem namespace (classes globais).
         self::assertContains('HealthEndpointTest', array_map(
-            static fn (string $class): string => ltrim($class, '\\'),
+            static fn(string $class): string => ltrim($class, '\\'),
             $classes,
         ));
     }
