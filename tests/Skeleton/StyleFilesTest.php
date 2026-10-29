@@ -62,7 +62,7 @@ final class StyleFilesTest extends TestCase
     }
 
     /**
-     * O .gitignore entregue não cita `tests-skeleton/`, pasta que só existe no skeleton.
+     * O .gitignore entregue não cita `tests/Skeleton/`, pasta que só existe no skeleton.
      *
      * @see docs/manutencao-do-skeleton.md#linhas-do-gitignore
      */
@@ -72,7 +72,7 @@ final class StyleFilesTest extends TestCase
     }
 
     /**
-     * Exemplos da doc sobre citar `tests-skeleton/` no .gitignore entregue.
+     * Exemplos da doc sobre citar `tests/Skeleton/` no .gitignore entregue.
      *
      * @see docs/manutencao-do-skeleton.md#linhas-do-gitignore
      */
@@ -86,11 +86,11 @@ final class StyleFilesTest extends TestCase
     public static function gitignoreFolderExamples(): iterable
     {
         yield 'passa: linha sem barra' => [".phpunit.result.cache\n", true];
-        yield 'falha: linha que cita tests-skeleton/' => ["/tests-skeleton/.phpunit.result.cache\n", false];
+        yield 'falha: linha que cita tests/Skeleton/' => ["/tests/Skeleton/.phpunit.result.cache\n", false];
     }
 
     /**
-     * Com o .gitignore entregue, o Git ignora o cache do PHPUnit na raiz e em `tests-skeleton/`.
+     * Com o .gitignore entregue, o Git ignora o cache do PHPUnit na raiz e em `tests/Skeleton/`.
      *
      * @see docs/manutencao-do-skeleton.md#linhas-do-gitignore
      */
@@ -101,14 +101,14 @@ final class StyleFilesTest extends TestCase
         self::assertSame(0, $codes[self::PHPUNIT_CACHE], 'git check-ignore -q .phpunit.result.cache');
         self::assertSame(
             0,
-            $codes['tests-skeleton/' . self::PHPUNIT_CACHE],
-            'git check-ignore -q tests-skeleton/.phpunit.result.cache',
+            $codes['tests/Skeleton/' . self::PHPUNIT_CACHE],
+            'git check-ignore -q tests/Skeleton/.phpunit.result.cache',
         );
     }
 
     /**
      * Passa: a linha sem barra ignora os dois caminhos. Falha: `/.phpunit.result.cache` não ignora o caminho de
-     * `tests-skeleton/`.
+     * `tests/Skeleton/`.
      *
      * @see docs/manutencao-do-skeleton.md#linhas-do-gitignore
      */
@@ -117,7 +117,7 @@ final class StyleFilesTest extends TestCase
     {
         $codes = self::checkIgnoreCodes($gitignore);
 
-        $both = $codes[self::PHPUNIT_CACHE] === 0 && $codes['tests-skeleton/' . self::PHPUNIT_CACHE] === 0;
+        $both = $codes[self::PHPUNIT_CACHE] === 0 && $codes['tests/Skeleton/' . self::PHPUNIT_CACHE] === 0;
 
         self::assertSame($ignoresBoth, $both);
     }
@@ -135,11 +135,11 @@ final class StyleFilesTest extends TestCase
         return array_map('trim', preg_split('~\R~', $gitignore) ?: []);
     }
 
-    /** Nenhuma linha cita `tests-skeleton`. */
+    /** Nenhuma linha cita `tests/Skeleton`. */
     private static function gitignoreKeepsToDeliveredPaths(string $gitignore): bool
     {
         foreach (self::gitignoreLines($gitignore) as $line) {
-            if (str_contains($line, 'tests-skeleton')) {
+            if (str_contains($line, 'tests/Skeleton')) {
                 return false;
             }
         }
@@ -167,7 +167,7 @@ final class StyleFilesTest extends TestCase
             file_put_contents($dir . '/.gitignore', $gitignore);
 
             $codes = [];
-            foreach ([self::PHPUNIT_CACHE, 'tests-skeleton/' . self::PHPUNIT_CACHE] as $path) {
+            foreach ([self::PHPUNIT_CACHE, 'tests/Skeleton/' . self::PHPUNIT_CACHE] as $path) {
                 $result = Skeleton::run(['git', 'check-ignore', '-q', $path], $dir);
                 self::assertContains($result['code'], [0, 1], "git check-ignore {$path}: " . $result['stderr']);
                 $codes[$path] = $result['code'];

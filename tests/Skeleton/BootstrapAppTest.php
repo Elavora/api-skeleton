@@ -152,7 +152,7 @@ final class BootstrapAppTest extends TestCase
     // ------------------------------------------------------------------ nenhuma citação a config/extensions.php
 
     /**
-     * Nenhum arquivo entregue contém `config/extensions.php`. A doc de manutenção e `tests-skeleton/` ficam de fora,
+     * Nenhum arquivo entregue contém `config/extensions.php`. A doc de manutenção e `tests/Skeleton/` ficam de fora,
      * porque não são entregues.
      *
      * @see docs/manutencao-do-skeleton.md#lista-de-extensões-do-projeto-no-appphp
@@ -164,7 +164,7 @@ final class BootstrapAppTest extends TestCase
         self::assertNotContains(self::DOC_FILE, $files);
         self::assertSame([], array_values(array_filter(
             $files,
-            static fn(string $file): bool => str_starts_with($file, 'tests-skeleton/'),
+            static fn(string $file): bool => str_starts_with($file, 'tests/Skeleton/'),
         )));
 
         $citing = array_values(array_filter(

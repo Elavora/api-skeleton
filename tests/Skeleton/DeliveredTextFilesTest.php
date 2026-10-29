@@ -14,7 +14,7 @@ use SkeletonTests\Support\Skeleton;
 final class DeliveredTextFilesTest extends TestCase
 {
     private const ROOT_CACHE = '.phpunit.result.cache';
-    private const SKELETON_TESTS_CACHE = 'tests-skeleton/.phpunit.result.cache';
+    private const SKELETON_TESTS_CACHE = 'tests/Skeleton/.phpunit.result.cache';
 
     /** @var array<string, string|null> conteúdo original de cada cache, null quando não existia */
     private array $originals = [];
@@ -56,7 +56,7 @@ final class DeliveredTextFilesTest extends TestCase
     }
 
     /**
-     * `tests-skeleton/.phpunit.result.cache` fica de fora, por estar em `tests-skeleton/`.
+     * `tests/Skeleton/.phpunit.result.cache` fica de fora, por estar em `tests/Skeleton/`.
      *
      * @see docs/manutencao-do-skeleton.md#arquivos-que-os-testes-tratam-como-entregues
      */
@@ -65,5 +65,23 @@ final class DeliveredTextFilesTest extends TestCase
         file_put_contents(Skeleton::path(self::SKELETON_TESTS_CACHE), 'Permission.php');
 
         self::assertNotContains(self::SKELETON_TESTS_CACHE, Skeleton::deliveredTextFiles());
+    }
+
+    /**
+     * Os três arquivos da aplicação em `tests/` continuam entregues; `tests/Skeleton/` inteiro fica de fora.
+     *
+     * @see docs/manutencao-do-skeleton.md#arquivos-que-os-testes-tratam-como-entregues
+     */
+    public function testOnlyTheApplicationTestsAreDelivered(): void
+    {
+        $files = Skeleton::deliveredTextFiles();
+
+        foreach ($files as $file) {
+            self::assertStringStartsNotWith('tests/Skeleton/', $file);
+        }
+        self::assertSame(
+            ['tests/ConventionRouteTest.php', 'tests/HealthEndpointTest.php', 'tests/bootstrap.php'],
+            array_values(array_filter($files, static fn(string $f): bool => str_starts_with($f, 'tests/'))),
+        );
     }
 }

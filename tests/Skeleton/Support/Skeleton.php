@@ -30,7 +30,7 @@ final class Skeleton
         '.github/workflows/skeleton-sync-labels.yml',
         '.github/workflows/skeleton-tests.yml',
         'docs/manutencao-do-skeleton.md',
-        'tests-skeleton',
+        'tests/Skeleton',
         'tools/skeleton-post-create.php',
     ];
 
@@ -38,12 +38,14 @@ final class Skeleton
 
     public const README_START = '<!-- skeleton:inicio -->';
     public const README_END = '<!-- skeleton:fim -->';
+    public const PHPUNIT_START = '<!-- skeleton:inicio -->';
+    public const PHPUNIT_END = '<!-- skeleton:fim -->';
     public const ATTRIBUTES_START = '# skeleton:inicio';
     public const ATTRIBUTES_END = '# skeleton:fim';
 
     public static function root(): string
     {
-        return dirname(__DIR__, 2);
+        return dirname(__DIR__, 3);
     }
 
     public static function path(string $relative): string
@@ -238,7 +240,7 @@ final class Skeleton
      * Arquivos de texto da entrega (o que vai para o projeto criado), relativos à raiz.
      *
      * Lê a árvore em disco, não a lista do Git. Pula todo caminho cujo primeiro componente esteja em `$ignoredDirs`
-     * (inclusive o `.phpunit.result.cache` da raiz, que guarda nomes de testes de `tests-skeleton/`),
+     * (inclusive o `.phpunit.result.cache` da raiz, que guarda nomes de testes de `tests/Skeleton/`),
      * `composer.lock`, `.env`, os arquivos só do skeleton e os binários.
      *
      * @see docs/manutencao-do-skeleton.md#arquivos-que-os-testes-tratam-como-entregues

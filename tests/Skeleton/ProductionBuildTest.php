@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use SkeletonTests\Support\Skeleton;
 
 /**
- * docs/manutencao-do-skeleton.md: "O que `tests-skeleton/` verifica" (build de produção).
+ * docs/manutencao-do-skeleton.md: "O que `tests/Skeleton/` verifica" (build de produção).
  * O elavora/code-standards fica fora da instalação --no-dev e o build continua funcionando.
  * "`Dockerfile`": o estágio dependencies não tem o comando git.
  */

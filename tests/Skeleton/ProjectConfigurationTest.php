@@ -13,15 +13,15 @@ use SkeletonTests\Support\Skeleton;
  *
  * Saiu de `tests/` porque confere arquivos do skeleton, e não a aplicação.
  *
- * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
- * @see docs/manutencao-do-skeleton.md#teste-de-arquivo-do-skeleton-fica-em-tests-skeleton
+ * @see docs/manutencao-do-skeleton.md#testes-movidos-para-testsskeleton
+ * @see docs/manutencao-do-skeleton.md#teste-de-arquivo-do-skeleton-fica-em-testsskeleton
  */
 final class ProjectConfigurationTest extends TestCase
 {
     /**
      * O `composer.lock` existe, é JSON válido e tem `content-hash`, `packages` e `packages-dev`.
      *
-     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-testsskeleton
      */
     public function testComposerLockIsVersionedForTheProject(): void
     {
@@ -38,7 +38,7 @@ final class ProjectConfigurationTest extends TestCase
      * No `Dockerfile`, a cópia do lock vem antes do `composer install`, que vem antes do `COPY . .`, e não há
      * `composer update`.
      *
-     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-testsskeleton
      */
     public function testDockerBuildInstallsTheVersionedLockBeforeCopyingTheApplication(): void
     {
@@ -61,7 +61,7 @@ final class ProjectConfigurationTest extends TestCase
     /**
      * O `docker-compose.yml` injeta o `.env` opcional pelo `env_file`.
      *
-     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-testsskeleton
      */
     public function testComposeInjectsOptionalEnvironmentFile(): void
     {
