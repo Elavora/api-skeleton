@@ -19,5 +19,5 @@
 /.github/workflows/skeleton-sync-labels.yml export-ignore
 /.github/workflows/skeleton-tests.yml export-ignore
 /docs/manutencao-do-skeleton.md export-ignore
-/tests-skeleton export-ignore
+/tests/Skeleton export-ignore
 # skeleton:fim

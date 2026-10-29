@@ -39,7 +39,7 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Rodar os testes da entrega
-        run: vendor/bin/phpunit -c tests-skeleton/phpunit.xml --exclude-group docker
+        run: vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --exclude-group docker
 
   build-producao:
     name: Build de produção
@@ -57,7 +57,7 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Conferir o build de produção
-        run: vendor/bin/phpunit -c tests-skeleton/phpunit.xml --group docker
+        run: vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --group docker
 
   actionlint:
     name: actionlint

@@ -11,6 +11,9 @@
     <testsuites>
         <testsuite name="Elavora API Skeleton">
             <directory>tests</directory>
+            <!-- skeleton:inicio -->
+            <exclude>tests/Skeleton</exclude>
+            <!-- skeleton:fim -->
         </testsuite>
     </testsuites>
 </phpunit>
