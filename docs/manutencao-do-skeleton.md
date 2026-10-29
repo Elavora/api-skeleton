@@ -39,7 +39,7 @@ grupos:
 | Grupo | Exemplos | Vai para o projeto criado? |
 | --- | --- | --- |
 | **Entrega** | `app/`, `core/`, `tests/`, `.devcontainer/`, `.github/workflows/quality.yml`, `.github/dependabot.yml`, `.editorconfig`, `.php-cs-fixer.dist.php`, `phpunit.xml`, `docs/USO.md`, `docs/ambiente-e-ci.md` | sim, e passa a ser do projeto |
-| **Só do skeleton** | `.github/workflows/skeleton-*.yml`, `tests-skeleton/`, esta página, o script de limpeza | não, é removido na criação |
+| **Só do skeleton** | `.github/workflows/skeleton-*.yml`, `tests/Skeleton/`, esta página, o script de limpeza | não, é removido na criação |
 
 A explicação da entrega para quem usa o projeto está no [Guia de uso](USO.md) e em
 [Ambiente de desenvolvimento e CI](ambiente-e-ci.md). O que a doc entregue diz, e o que ela não diz, está em
@@ -116,7 +116,9 @@ escapar da limpeza, ele não roda em outro repositório.
 ### Ao adicionar um arquivo só do skeleton
 
 Coloque o caminho em três lugares: a lista `SKELETON_ONLY` do script, o bloco do `.gitattributes` e a tabela da
-[referência](#arquivos-só-do-skeleton). Os testes da entrega acusam a diferença.
+[referência](#arquivos-só-do-skeleton). Se o arquivo ficar dentro de uma pasta entregue (como `tests/Skeleton/` dentro
+de `tests/`), confira também se o resto da entrega não passa a enxergá-lo (veja
+[Como `tests/Skeleton/` convive com `tests/`](#como-testsskeleton-convive-com-tests)). Os testes da entrega acusam a diferença.
 
 ### Ao mudar algo da entrega
 
@@ -130,7 +132,7 @@ partida: se a entrega for fina, não há o que atualizar.
 
 O workflow `Testes do skeleton` (`.github/workflows/skeleton-tests.yml`) verifica o skeleton como produto:
 
-- **Entrega**: roda os testes de `tests-skeleton/`. Eles conferem o conteúdo dos arquivos entregues e executam o
+- **Entrega**: roda os testes de `tests/Skeleton/`. Eles conferem o conteúdo dos arquivos entregues e executam o
   script de limpeza numa cópia do repositório;
 - **Build de produção**: confere que o `docker build` do `Dockerfile` (com `composer install --no-dev`) continua
   funcionando;
@@ -141,12 +143,66 @@ Não há job de perfis de aplicação. Veja [Matriz de perfis fora do CI](#matri
 Para rodar os testes da entrega localmente, na raiz do repositório, no PowerShell:
 
 ```powershell
-docker run --rm --mount "type=bind,source=$($PWD.Path),target=/workspace" -w /workspace ghcr.io/elavora/php-dev:8.3-latest sh -lc 'git config --global --add safe.directory /workspace && composer install --no-interaction --prefer-dist && vendor/bin/phpunit -c tests-skeleton/phpunit.xml --exclude-group docker'
+docker run --rm --mount "type=bind,source=$($PWD.Path),target=/workspace" -w /workspace ghcr.io/elavora/php-dev:8.3-latest sh -lc 'git config --global --add safe.directory /workspace && composer install --no-interaction --prefer-dist && vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --exclude-group docker'
 ```
 
 Os testes de `tests/` são da aplicação e vão para o projeto criado. Eles conferem o código de `app/`. Teste que fala
 do skeleton em si (limpeza, workflows do skeleton, conteúdo da entrega, arquivos como o `Dockerfile` e o Compose)
-fica em `tests-skeleton/`, que não vai para o projeto.
+fica em `tests/Skeleton/`, que não vai para o projeto. Veja [Como `tests/Skeleton/` convive com
+`tests/`](#como-testsskeleton-convive-com-tests).
+
+### Como `tests/Skeleton/` convive com `tests/`
+
+A pasta `tests/Skeleton/` fica dentro de `tests/` só por organização. As duas suítes continuam separadas:
+
+| | Suíte da aplicação | Suíte do skeleton |
+| --- | --- | --- |
+| Pasta | `tests/` (sem `tests/Skeleton/`) | `tests/Skeleton/` |
+| Configuração | `phpunit.xml` da raiz | `tests/Skeleton/phpunit.xml` |
+| Bootstrap | `tests/bootstrap.php` | `tests/Skeleton/bootstrap.php` |
+| Namespace | `Tests\` | `SkeletonTests\` |
+| Comando | `composer test` | `vendor/bin/phpunit -c tests/Skeleton/phpunit.xml` |
+| Vai para o projeto criado? | sim | não |
+
+**A suíte da aplicação não executa `tests/Skeleton/`.** O `<testsuite>` do `phpunit.xml` da raiz continua com
+`<directory>tests</directory>`, que procura testes em todas as subpastas. Por isso ele tem um `<exclude>` para
+`tests/Skeleton`, dentro de um trecho marcado. No repositório do skeleton, o `<testsuite>` fica exatamente assim:
+
+```xml
+<testsuite name="Elavora API Skeleton">
+    <directory>tests</directory>
+    <!-- skeleton:inicio -->
+    <exclude>tests/Skeleton</exclude>
+    <!-- skeleton:fim -->
+</testsuite>
+```
+
+No projeto criado, o script de limpeza remove o trecho (as duas linhas dos marcadores e a do `<exclude>`), e o
+`<testsuite>` volta a ser só `<directory>tests</directory>`. O projeto criado não tem nenhuma referência a
+`tests/Skeleton`. Os marcadores seguem as "Regras dos trechos marcados" de [`tools/skeleton-post-create.php`](#toolsskeleton-post-createphp).
+
+Exemplos:
+
+- Passa: `vendor/bin/phpunit -c phpunit.xml --list-tests` no repositório do skeleton não lista nenhuma classe do
+  namespace `SkeletonTests`;
+- Passa: `vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --list-tests` lista só classes do namespace
+  `SkeletonTests`, e nenhuma do namespace `Tests`;
+- Falha: um `phpunit.xml` da raiz sem o `<exclude>`, porque o `composer test` passaria a rodar os testes do
+  skeleton (incluindo o `docker build`) e a cobertura do CI mudaria;
+- Falha: um `phpunit.xml` entregue, depois da limpeza, que ainda cite `tests/Skeleton`.
+
+**Namespace, bootstrap e autoload:**
+
+- O `composer.json` não muda: `autoload-dev` continua com `Tests\` apontando para `tests/`. Os testes do skeleton
+  usam o namespace `SkeletonTests` (e `SkeletonTests\Support` para o `Support/Skeleton.php`), que **não** está no
+  autoload do Composer. Por isso não há colisão de nomes com `Tests\`;
+- O `tests/Skeleton/bootstrap.php` carrega o autoload do Composer da raiz (`dirname(__DIR__, 2) . '/vendor/autoload.php'`,
+  duas pastas acima) e depois o `tests/Skeleton/Support/Skeleton.php`, com `require`. O `tests/bootstrap.php` da
+  aplicação não muda e não conhece `tests/Skeleton/`;
+- O `tests/Skeleton/phpunit.xml` tem `bootstrap="bootstrap.php"` e `<directory>.</directory>`, relativos à própria
+  pasta. Ele não muda de conteúdo, só de lugar;
+- O Composer pode avisar, ao gerar um autoload otimizado, que as classes de `tests/Skeleton/` não seguem o PSR-4 de
+  `Tests\`. É só aviso, e vale só no repositório do skeleton. Nenhum teste depende dele.
 
 ### Arquivos que os testes tratam como entregues
 
@@ -156,17 +212,19 @@ não a lista do Git. Ficam de fora:
 - todo caminho cujo primeiro componente seja `vendor`, `.git`, `node_modules`, `coverage`, `.phpunit.cache`,
   `.phpstan.cache`, `.elavora` ou `.phpunit.result.cache`;
 - `composer.lock` e `.env`;
-- os [arquivos só do skeleton](#arquivos-só-do-skeleton), entre eles `tests-skeleton/` inteiro;
+- os [arquivos só do skeleton](#arquivos-só-do-skeleton), entre eles `tests/Skeleton/` inteiro. Os demais arquivos de
+  `tests/` (`tests/ConventionRouteTest.php`, `tests/HealthEndpointTest.php` e `tests/bootstrap.php`) continuam
+  sendo arquivos entregues;
 - arquivos binários (com byte nulo).
 
 O `.phpunit.result.cache` da raiz guarda os nomes dos testes e dos data sets. Se ele vier de uma rodada dos testes de
-`tests-skeleton/` feita com o `phpunit.xml` da raiz, terá textos como `Permission.php`,
+`tests/Skeleton/` feita por engano com o `phpunit.xml` da raiz (de uma versão sem o `<exclude>`), terá textos como `Permission.php`,
 `ExtensionConfigurationTest` e referências à imagem `php-dev` com outra tag. Se contasse como arquivo entregue, faria falhar as checagens de
 citação aos exemplos, aos testes removidos e à imagem de desenvolvimento.
 
 - Passa: com um `.phpunit.result.cache` na raiz que cita `Permission.php`, a lista de arquivos entregues não o
   inclui, e os testes da entrega passam;
-- Passa: `tests-skeleton/.phpunit.result.cache` fica de fora, por estar em `tests-skeleton/`;
+- Passa: `tests/Skeleton/.phpunit.result.cache` fica de fora, por estar em `tests/Skeleton/`;
 - Falha: a lista de arquivos entregues inclui `.phpunit.result.cache`.
 
 A cópia do repositório usada no teste do script de limpeza não muda. Levar o cache para a cópia não afeta o
@@ -184,19 +242,19 @@ A matriz volta com as extensões, quando elas aceitarem o framework 2 (veja
 [Riscos e pendências](#riscos-e-pendências)): um perfil por overlay de `core/compose/`, com o framework vindo do
 `composer.lock`.
 
-### Teste de arquivo do skeleton fica em `tests-skeleton/`
+### Teste de arquivo do skeleton fica em `tests/Skeleton/`
 
 `tests/` não tem teste que confira o conteúdo de um arquivo do skeleton, como o `Dockerfile`, o
 `docker-compose.yml`, os overlays de `core/compose/`, o `composer.json` ou o `composer.lock`.
 
-Esses testes ficam em `tests-skeleton/`. O motivo: depois da criação, esses arquivos são do projeto. O projeto pode
+Esses testes ficam em `tests/Skeleton/`. O motivo: depois da criação, esses arquivos são do projeto. O projeto pode
 instalar outras extensões no `Dockerfile`, mudar o build ou trocar o Compose. Um teste copiado para `tests/`
 travaria a escolha do skeleton e falharia no CI do projeto na primeira mudança, sem que a aplicação estivesse
 errada.
 
 A conferência continua existindo, mas no lugar certo: ela garante que o skeleton entrega esses arquivos certos. Os
 testes que saíram de `tests/` por esse motivo estão em
-[Testes movidos para `tests-skeleton/`](#testes-movidos-para-tests-skeleton).
+[Testes movidos para `tests/Skeleton/`](#testes-movidos-para-testsskeleton).
 
 ### Teste do framework fica no framework
 
@@ -263,7 +321,7 @@ Por isso esta página não guarda os valores que o Dependabot troca (veja
 
 ## Referência da entrega
 
-Esta seção define o conteúdo exato que o skeleton entrega. Ela é a base dos testes de `tests-skeleton/`. Ela vale
+Esta seção define o conteúdo exato que o skeleton entrega. Ela é a base dos testes de `tests/Skeleton/`. Ela vale
 também para o próprio repositório `api-skeleton`, que usa os mesmos arquivos.
 
 ### Versões e referências
@@ -384,12 +442,13 @@ O `worker.php` carrega o `tasks.php`.
 Os exemplos antigos não existem: `app/Attributes/Permission.php`, `app/DataTypes/ProjectCode.php`,
 `app/Worker/ExampleTaskHandler.php`, `tests/GuideExamplesTest.php` e `tests/ResponseableDataTypeTest.php`.
 
-Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) cita `Permission.php`,
+Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests/Skeleton/`) cita `Permission.php`,
 `ProjectCode`, `ExampleTaskHandler`, `example.ping` ou `Exemplos didaticos`.
 
 #### O que fica em `tests/`
 
-Conteúdo de `tests/` (nada além disto):
+Conteúdo de `tests/` (nada além disto, fora a pasta `tests/Skeleton/`, que existe só no repositório do skeleton e é
+removida na criação do projeto). Depois da limpeza, `tests/` tem exatamente estes três arquivos e nenhuma pasta:
 
 | Arquivo | O que confere |
 | --- | --- |
@@ -397,11 +456,11 @@ Conteúdo de `tests/` (nada além disto):
 | `tests/HealthEndpointTest.php` | `/health` responde `{"status":"ok"}` sem extensões opcionais |
 | `tests/bootstrap.php` | carrega o autoload do Composer |
 
-#### Testes movidos para `tests-skeleton/`
+#### Testes movidos para `tests/Skeleton/`
 
-`tests-skeleton/ApcuDockerConfigurationTest.php` e `tests-skeleton/ProjectConfigurationTest.php` conferem arquivos do
+`tests/Skeleton/ApcuDockerConfigurationTest.php` e `tests/Skeleton/ProjectConfigurationTest.php` conferem arquivos do
 skeleton, e não a aplicação (veja
-[Teste de arquivo do skeleton fica em `tests-skeleton/`](#teste-de-arquivo-do-skeleton-fica-em-tests-skeleton)).
+[Teste de arquivo do skeleton fica em `tests/Skeleton/`](#teste-de-arquivo-do-skeleton-fica-em-testsskeleton)).
 Por isso não existem em `tests/`.
 
 **`ApcuDockerConfigurationTest`** (bloco do APCu):
@@ -441,7 +500,7 @@ Estes testes não existem em `tests/`. Eles conferiam o `EnvironmentExtensions` 
 | `tests/LogExtensionConfigurationTest.php` | erro para `LOG_DRIVER` inválido e para pacote de log não instalado | `tests/EnvironmentExtensionsTest.php` do framework |
 | `tests/RedisExtensionEnvironmentTest.php` | `REDIS_PASSWORD` e `REDIS_DATABASE` repassados ao cache e à fila | `tests/RedisExtensionEnvironmentTest.php` do framework |
 
-Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) cita
+Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests/Skeleton/`) cita
 `ExtensionConfigurationTest`, `LogExtensionConfigurationTest` ou `RedisExtensionEnvironmentTest`.
 
 ### `core/bootstrap/app.php`
@@ -499,7 +558,7 @@ A lista é escrita direto no argumento, e não numa variável. Uma variável no 
 O arquivo `core/config/extensions.php` não existe, nem a pasta `core/config/`. A pasta `core/` continua com o mesmo
 nome e fica só com `bootstrap/app.php` e `compose/`.
 
-Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests-skeleton/`) contém o texto
+Nenhum arquivo entregue (fora de `docs/manutencao-do-skeleton.md` e `tests/Skeleton/`) contém o texto
 `config/extensions.php`.
 
 - Passa: o `README.md` com a árvore de `core/` sem a linha `config/extensions.php`.
@@ -775,16 +834,16 @@ O `.gitignore` entregue tem, cada uma numa linha própria, exatamente com este t
 - `.phpunit.result.cache`: cache de resultados do PHPUnit.
 
 Como os `phpunit.xml` não definem `cacheDirectory`, o PHPUnit grava o `.phpunit.result.cache` na pasta do
-`phpunit.xml` usado. Isso dá dois lugares: a raiz (`composer test`) e `tests-skeleton/`
-(`phpunit -c tests-skeleton/phpunit.xml`). A linha não tem barra, então vale nos dois. O `.gitignore` é entregue e
-não cita `tests-skeleton/`. Os `phpunit.xml` não mudam.
+`phpunit.xml` usado. Isso dá dois lugares: a raiz (`composer test`) e `tests/Skeleton/`
+(`phpunit -c tests/Skeleton/phpunit.xml`). A linha não tem barra, então vale nos dois. O `.gitignore` é entregue e
+não cita `tests/Skeleton/`. Os dois `phpunit.xml` não definem `cacheDirectory`. Com o `<exclude>` do `phpunit.xml` da raiz, a rodada da raiz não tem os testes do skeleton, mas a regra continua valendo para os dois lugares.
 
 Depois de rodar os testes, `git status --porcelain` não lista o cache:
 
 - Passa: `git check-ignore -q .phpunit.result.cache` termina com código 0;
-- Passa: `git check-ignore -q tests-skeleton/.phpunit.result.cache` termina com código 0;
-- Falha: um `.gitignore` só com `/.phpunit.result.cache`, porque o caminho de `tests-skeleton/` não é ignorado;
-- Falha: um `.gitignore` com `/tests-skeleton/.phpunit.result.cache`, porque cita uma pasta que só existe no
+- Passa: `git check-ignore -q tests/Skeleton/.phpunit.result.cache` termina com código 0;
+- Falha: um `.gitignore` só com `/.phpunit.result.cache`, porque o caminho de `tests/Skeleton/` não é ignorado;
+- Falha: um `.gitignore` com `/tests/Skeleton/.phpunit.result.cache`, porque cita uma pasta que só existe no
   skeleton.
 
 ### `Dockerfile`
@@ -945,7 +1004,7 @@ template de PR: o da organização vale para os repositórios dela.
 | `.github/workflows/skeleton-sync-labels.yml` | arquivo | sincronização de labels |
 | `.github/workflows/skeleton-tests.yml` | arquivo | testes da entrega, build de produção e actionlint |
 | `docs/manutencao-do-skeleton.md` | arquivo | esta página |
-| `tests-skeleton/` | pasta | testes da entrega |
+| `tests/Skeleton/` | pasta | testes da entrega |
 | `tools/skeleton-post-create.php` | arquivo | script de limpeza (apaga a si mesmo por último) |
 
 Essa lista, nessa ordem, é a constante `SKELETON_ONLY` do script.
@@ -966,7 +1025,7 @@ O arquivo termina com um bloco delimitado por duas linhas exatas:
 /.github/workflows/skeleton-sync-labels.yml export-ignore
 /.github/workflows/skeleton-tests.yml export-ignore
 /docs/manutencao-do-skeleton.md export-ignore
-/tests-skeleton export-ignore
+/tests/Skeleton export-ignore
 # skeleton:fim
 ```
 
@@ -993,12 +1052,16 @@ Roda com `php tools/skeleton-post-create.php`, sem argumentos. A raiz do projeto
 Passos, nesta ordem:
 
 1. **Remove os caminhos de `SKELETON_ONLY`**, exceto o próprio script. Pastas são removidas com todo o conteúdo.
-   Caminho que não existe é ignorado, sem erro.
+   Caminho que não existe é ignorado, sem erro. `tests/Skeleton` sai com tudo o que tem dentro, e a pasta `tests/` fica (com `ConventionRouteTest.php`, `HealthEndpointTest.php` e `bootstrap.php`). O caminho é o mesmo do `.gitattributes`, mas sem a barra inicial.
 2. **README.md**: remove o trecho que vai da linha `<!-- skeleton:inicio -->` até a linha `<!-- skeleton:fim -->`,
    incluindo as duas linhas.
 3. **.gitattributes**: remove o trecho que vai da linha `# skeleton:inicio` até a linha `# skeleton:fim`, incluindo
    as duas linhas.
-4. **composer.json**: remove as chaves `name`, `description` e `scripts.post-create-project-cmd`. Se `scripts`
+4. **phpunit.xml**: remove o trecho que vai da linha `<!-- skeleton:inicio -->` até a linha `<!-- skeleton:fim -->`,
+   incluindo as duas linhas. É o `<exclude>tests/Skeleton</exclude>` do `<testsuite>` (veja
+   [Como `tests/Skeleton/` convive com `tests/`](#como-testsskeleton-convive-com-tests)). Depois da limpeza, o arquivo
+   não tem `skeleton:` nem `tests/Skeleton`. O resto do `phpunit.xml` fica igual, byte a byte.
+5. **composer.json**: remove as chaves `name`, `description` e `scripts.post-create-project-cmd`. Se `scripts`
    ficar vazio, remove também `scripts`. Chave que não existe é ignorada, sem erro. Todas as outras chaves
    continuam, na mesma ordem. Se pelo menos uma chave saiu, o arquivo é regravado com indentação de 4 espaços, sem
    escapar `/` nem caracteres acentuados, e termina com uma quebra de linha. Se nenhuma saiu, o arquivo fica igual,
@@ -1006,19 +1069,19 @@ Passos, nesta ordem:
    - `name` (`elavora/api-skeleton`) e `description` são do pacote do skeleton. O projeto criado não é esse
      pacote. Quem quiser publicar o projeto preenche os dois.
    - Num `type: project`, o `name` é opcional: `composer validate --strict --no-check-publish` passa sem ele.
-5. **composer.lock**: o `content-hash` do lock depende do `name` do `composer.json`. Sem atualizar o hash, o
-   `composer validate` reprova o lock com "The lock file is not up to date". Por isso, depois do passo 4:
+6. **composer.lock**: o `content-hash` do lock depende do `name` do `composer.json`. Sem atualizar o hash, o
+   `composer validate` reprova o lock com "The lock file is not up to date". Por isso, depois do passo 5:
    - o script calcula o hash do `composer.json` novo com o mesmo algoritmo do Composer (abaixo);
    - se o valor for diferente do `content-hash` atual, troca só esse valor no arquivo. Todo o resto do lock fica
      igual, byte a byte, inclusive a formatação e as quebras de linha;
-   - se for igual, ou se o passo 4 não mudou o `composer.json`, o lock fica igual e não há linha na saída;
+   - se for igual, ou se o passo 5 não mudou o `composer.json`, o lock fica igual e não há linha na saída;
    - se o `composer.lock` não existir, o passo é ignorado, sem erro.
-6. **Remove o próprio script.** Se `tools/` ficar vazia, ela também é removida. No skeleton atual ela fica vazia,
+7. **Remove o próprio script.** Se `tools/` ficar vazia, ela também é removida. No skeleton atual ela fica vazia,
    porque o `tools/lint.php` não existe mais: o projeto criado não tem a pasta `tools/`.
-7. Imprime na saída padrão uma linha por item removido ou alterado e termina com código 0. Os arquivos alterados
+8. Imprime na saída padrão uma linha por item removido ou alterado e termina com código 0. Os arquivos alterados
    aparecem como `alterado: composer.json` e `alterado: composer.lock`, uma vez cada, nesta ordem.
 
-Regras dos trechos marcados (passos 2 e 3):
+Regras dos trechos marcados (passos 2, 3 e 4):
 
 - O marcador é reconhecido quando a linha inteira, sem espaços nas pontas, é igual ao texto do marcador.
 - As linhas fora do trecho ficam iguais, inclusive as quebras de linha (`\n` ou `\r\n`).
@@ -1103,13 +1166,13 @@ matriz (veja [Matriz de perfis fora do CI](#matriz-de-perfis-fora-do-ci)):
 
 - `entrega`: roda na imagem `ghcr.io/elavora/php-dev:8.3-latest`, como root, porque o workspace do runner pertence a
   outro UID (`COMPOSER_ALLOW_SUPERUSER: '1'`). Roda `composer install --no-interaction --no-progress --prefer-dist` e
-  `vendor/bin/phpunit -c tests-skeleton/phpunit.xml --exclude-group docker`. A imagem não tem Docker;
+  `vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --exclude-group docker`. A imagem não tem Docker;
 - `build-producao`: roda direto no `ubuntu-latest`, que já tem Docker, PHP e Composer. Roda
   `composer install --no-interaction --no-progress --prefer-dist` e
-  `vendor/bin/phpunit -c tests-skeleton/phpunit.xml --group docker`;
+  `vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --group docker`;
 - `actionlint`: roda o actionlint sobre `.github/workflows/`.
 
-### O que `tests-skeleton/` verifica
+### O que `tests/Skeleton/` verifica
 
 Todas as checagens de referências seguem
 [Atualizações do Dependabot não quebram os testes](#atualizações-do-dependabot-não-quebram-os-testes).
@@ -1121,18 +1184,22 @@ Todas as checagens de referências seguem
   - chamador e job `imagem` do `quality.yml`, e os textos proibidos;
   - `dependabot.yml`, com só os itens `composer` e `github-actions`;
   - stub do PHP-CS-Fixer, estrutura do `.editorconfig`, [linhas do `.gitignore`](#linhas-do-gitignore) (com
-    `git check-ignore` do cache do PHPUnit na raiz e em `tests-skeleton/`) e
+    `git check-ignore` do cache do PHPUnit na raiz e em `tests/Skeleton/`) e
     [linhas do `.dockerignore`](#linhas-do-dockerignore);
   - a lista de [arquivos que os testes tratam como entregues](#arquivos-que-os-testes-tratam-como-entregues) sem o
     `.phpunit.result.cache`;
   - `<source>` do `phpunit.xml`: só `app` no `<include>` e só `app/Worker` no `<exclude>`;
+  - `<testsuite>` do `phpunit.xml` da raiz exatamente como em
+    [Como `tests/Skeleton/` convive com `tests/`](#como-testsskeleton-convive-com-tests) (`<directory>tests</directory>`
+    e o trecho marcado com `<exclude>tests/Skeleton</exclude>`), a suíte da raiz sem nenhuma classe `SkeletonTests`, e
+    a suíte de `tests/Skeleton/phpunit.xml` só com classes `SkeletonTests`;
   - ausência dos workflows removidos;
   - conteúdo de `app/` igual à tabela de [`app/` e `tests/`](#app-e-tests), o `tasks.php` exato, a ausência dos
     arquivos de exemplo e de seus testes, e nenhuma citação aos exemplos nos arquivos entregues;
   - conteúdo de `tests/` igual à tabela de [O que fica em `tests/`](#o-que-fica-em-tests), a ausência dos
     [testes que repetiam o framework](#testes-que-repetiam-o-framework) e nenhuma citação a eles nos arquivos
     entregues;
-  - os [testes movidos para `tests-skeleton/`](#testes-movidos-para-tests-skeleton): o bloco do APCu no
+  - os [testes movidos para `tests/Skeleton/`](#testes-movidos-para-testsskeleton): o bloco do APCu no
     `Dockerfile` e no overlay `core/compose/apcu.yml`, o `composer.lock` versionado, a ordem do build no
     `Dockerfile` sem `composer update` e o `env_file` opcional do `docker-compose.yml`;
   - o [`core/bootstrap/app.php`](#corebootstrapappphp) sem `loadEnvironmentExtensions`, com o
