@@ -111,7 +111,11 @@ final class TestSuitesSeparationTest extends TestCase
         foreach ($classes as $class) {
             self::assertStringStartsNotWith('SkeletonTests\\', $class);
         }
-        self::assertContains('Tests\\HealthEndpointTest', $classes);
+        // Os testes da aplicacao em tests/ nao tem namespace (classes globais).
+        self::assertContains('HealthEndpointTest', array_map(
+            static fn (string $class): string => ltrim($class, '\\'),
+            $classes,
+        ));
     }
 
     public function testSkeletonSuiteListsOnlySkeletonTestsClasses(): void
