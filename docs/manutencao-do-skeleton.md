@@ -160,7 +160,7 @@ A pasta `tests/Skeleton/` fica dentro de `tests/` só por organização. As duas
 | Pasta | `tests/` (sem `tests/Skeleton/`) | `tests/Skeleton/` |
 | Configuração | `phpunit.xml` da raiz | `tests/Skeleton/phpunit.xml` |
 | Bootstrap | `tests/bootstrap.php` | `tests/Skeleton/bootstrap.php` |
-| Namespace | `Tests\` | `SkeletonTests\` |
+| Namespace | nenhum (classes globais, como `HealthEndpointTest`) | `SkeletonTests\` |
 | Comando | `composer test` | `vendor/bin/phpunit -c tests/Skeleton/phpunit.xml` |
 | Vai para o projeto criado? | sim | não |
 
@@ -186,7 +186,7 @@ Exemplos:
 - Passa: `vendor/bin/phpunit -c phpunit.xml --list-tests` no repositório do skeleton não lista nenhuma classe do
   namespace `SkeletonTests`;
 - Passa: `vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --list-tests` lista só classes do namespace
-  `SkeletonTests`, e nenhuma do namespace `Tests`;
+  `SkeletonTests`, e nenhuma classe global da aplicação;
 - Falha: um `phpunit.xml` da raiz sem o `<exclude>`, porque o `composer test` passaria a rodar os testes do
   skeleton (incluindo o `docker build`) e a cobertura do CI mudaria;
 - Falha: um `phpunit.xml` entregue, depois da limpeza, que ainda cite `tests/Skeleton`.
@@ -195,7 +195,7 @@ Exemplos:
 
 - O `composer.json` não muda: `autoload-dev` continua com `Tests\` apontando para `tests/`. Os testes do skeleton
   usam o namespace `SkeletonTests` (e `SkeletonTests\Support` para o `Support/Skeleton.php`), que **não** está no
-  autoload do Composer. Por isso não há colisão de nomes com `Tests\`;
+  autoload do Composer. Por isso não há colisão de nomes com a aplicação;
 - O `tests/Skeleton/bootstrap.php` carrega o autoload do Composer da raiz (`dirname(__DIR__, 2) . '/vendor/autoload.php'`,
   duas pastas acima) e depois o `tests/Skeleton/Support/Skeleton.php`, com `require`. O `tests/bootstrap.php` da
   aplicação não muda e não conhece `tests/Skeleton/`;
