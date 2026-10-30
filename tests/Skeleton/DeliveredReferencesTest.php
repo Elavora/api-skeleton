@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use SkeletonTests\Support\Skeleton;
 
 /**
- * docs/manutencao-do-skeleton.md: "Versões e referências" e "O que `tests-skeleton/` verifica"
+ * docs/manutencao-do-skeleton.md: "Versões e referências" e "O que `tests/Skeleton/` verifica"
  * (imagem de desenvolvimento e documentação entregue).
  */
 final class DeliveredReferencesTest extends TestCase
@@ -53,7 +53,7 @@ final class DeliveredReferencesTest extends TestCase
      * A documentação entregue não cita `8.3-0.`, SHA de 40 hex nem `manutencao-do-skeleton.md`.
      * O guia de migração foi apagado, então a citação a ele não é mais conferida.
      *
-     * @see docs/manutencao-do-skeleton.md#o-que-tests-skeleton-verifica
+     * @see docs/manutencao-do-skeleton.md#o-que-testsskeleton-verifica
      * @see docs/manutencao-do-skeleton.md#guia-de-migração-removido
      */
     #[DataProvider('deliveredDocs')]

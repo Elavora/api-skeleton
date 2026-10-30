@@ -12,15 +12,15 @@ use SkeletonTests\Support\Skeleton;
  *
  * Saiu de `tests/` porque confere arquivos do skeleton, e não a aplicação.
  *
- * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
- * @see docs/manutencao-do-skeleton.md#teste-de-arquivo-do-skeleton-fica-em-tests-skeleton
+ * @see docs/manutencao-do-skeleton.md#testes-movidos-para-testsskeleton
+ * @see docs/manutencao-do-skeleton.md#teste-de-arquivo-do-skeleton-fica-em-testsskeleton
  */
 final class ApcuDockerConfigurationTest extends TestCase
 {
     /**
      * O bloco do APCu no `Dockerfile` vem antes do bloco do MySQL, habilita a extensão e liga `apc.enable_cli`.
      *
-     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-testsskeleton
      */
     public function testApcuInstallationEnablesTheExtensionForPhpCli(): void
     {
@@ -44,7 +44,7 @@ final class ApcuDockerConfigurationTest extends TestCase
     /**
      * O overlay `core/compose/apcu.yml` liga o build do APCu e o driver de cache.
      *
-     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-tests-skeleton
+     * @see docs/manutencao-do-skeleton.md#testes-movidos-para-testsskeleton
      */
     public function testApcuComposeOverlayEnablesTheBuildAndRuntimeConfiguration(): void
     {

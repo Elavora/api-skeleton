@@ -16,7 +16,7 @@ const SKELETON_ONLY = [
     '.github/workflows/skeleton-sync-labels.yml',
     '.github/workflows/skeleton-tests.yml',
     'docs/manutencao-do-skeleton.md',
-    'tests-skeleton',
+    'tests/Skeleton',
     'tools/skeleton-post-create.php',
 ];
 
@@ -313,6 +313,7 @@ function skeletonCleanup(string $root, string $self, $stdout, $stderr): int
 
         skeletonCleanMarkedFile($root, 'README.md', '<!-- skeleton:inicio -->', '<!-- skeleton:fim -->', $stdout, $stderr);
         skeletonCleanMarkedFile($root, '.gitattributes', '# skeleton:inicio', '# skeleton:fim', $stdout, $stderr);
+        skeletonCleanMarkedFile($root, 'phpunit.xml', '<!-- skeleton:inicio -->', '<!-- skeleton:fim -->', $stdout, $stderr);
         $composerJson = skeletonCleanComposer($root, $composer, $stdout);
         skeletonUpdateLock($root, $lock, $composerJson, $stdout);
 

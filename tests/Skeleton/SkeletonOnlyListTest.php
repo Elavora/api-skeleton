@@ -104,6 +104,6 @@ final class SkeletonOnlyListTest extends TestCase
         foreach (Skeleton::SKELETON_ONLY as $path) {
             self::assertFileExists(Skeleton::path($path));
         }
-        self::assertDirectoryExists(Skeleton::path('tests-skeleton'));
+        self::assertDirectoryExists(Skeleton::path('tests/Skeleton'));
     }
 }

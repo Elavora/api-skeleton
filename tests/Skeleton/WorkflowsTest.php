@@ -224,13 +224,13 @@ final class WorkflowsTest extends TestCase
         self::assertStringContainsString(Skeleton::DEV_IMAGE, $entrega);
         self::assertMatchesRegularExpression('~COMPOSER_ALLOW_SUPERUSER:\s*([\'"])1\1~', $entrega);
         self::assertStringContainsString('composer install --no-interaction --no-progress --prefer-dist', $entrega);
-        self::assertStringContainsString('vendor/bin/phpunit -c tests-skeleton/phpunit.xml --exclude-group docker', $entrega);
+        self::assertStringContainsString('vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --exclude-group docker', $entrega);
 
         $build = (string) Skeleton::jobBlock($yaml, 'build-producao');
         self::assertMatchesRegularExpression('~^    runs-on:\s*ubuntu-latest\s*$~m', $build);
         self::assertStringNotContainsString('php-dev', $build, 'build-producao roda direto no runner, que tem Docker');
         self::assertStringContainsString('composer install --no-interaction --no-progress --prefer-dist', $build);
-        self::assertStringContainsString('vendor/bin/phpunit -c tests-skeleton/phpunit.xml --group docker', $build);
+        self::assertStringContainsString('vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --group docker', $build);
 
         $actionlint = (string) Skeleton::jobBlock($yaml, 'actionlint');
         self::assertStringContainsString('actionlint', $actionlint);

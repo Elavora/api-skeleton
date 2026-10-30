@@ -142,7 +142,7 @@ final class PostCreateScriptTest extends TestCase
 
     private static function attributesWithBlock(): string
     {
-        return "* text=auto eol=lf\n\n" . Skeleton::ATTRIBUTES_START . "\n/tests-skeleton export-ignore\n"
+        return "* text=auto eol=lf\n\n" . Skeleton::ATTRIBUTES_START . "\n/tests/Skeleton export-ignore\n"
             . Skeleton::ATTRIBUTES_END . "\n";
     }
 
@@ -165,6 +165,7 @@ final class PostCreateScriptTest extends TestCase
         Skeleton::copyRepository($root);
         $before = Skeleton::snapshot($root);
         $readme = (string) file_get_contents($root . '/README.md');
+        $phpunit = (string) file_get_contents($root . '/phpunit.xml');
         $attributes = (string) file_get_contents($root . '/.gitattributes');
         $composer = json_decode((string) file_get_contents($root . '/composer.json'), false, flags: JSON_THROW_ON_ERROR);
         self::assertFileExists($root . '/composer.lock');
@@ -197,6 +198,35 @@ final class PostCreateScriptTest extends TestCase
             $attributesAfter,
         );
 
+        // phpunit.xml: só o trecho marcado sai; o resto fica igual, byte a byte.
+        self::assertStringContainsString('skeleton:inicio', $phpunit, 'o phpunit.xml do skeleton tem o trecho marcado');
+        $phpunitAfter = (string) file_get_contents($root . '/phpunit.xml');
+        self::assertStringNotContainsString('skeleton:', $phpunitAfter);
+        self::assertStringNotContainsString('tests/Skeleton', $phpunitAfter);
+        self::assertSame(
+            Skeleton::withoutMarkedBlock($phpunit, Skeleton::PHPUNIT_START, Skeleton::PHPUNIT_END),
+            $phpunitAfter,
+        );
+        $suite = simplexml_load_string($phpunitAfter);
+        self::assertNotFalse($suite);
+        self::assertSame(
+            ['tests'],
+            array_map(static fn($n): string => trim((string) $n), $suite->xpath('/phpunit/testsuites/testsuite/*') ?: []),
+        );
+
+        // O projeto criado não cita tests/Skeleton, e tests/ fica só com os 3 arquivos da aplicação.
+        self::assertDirectoryDoesNotExist($root . '/tests/Skeleton');
+        self::assertSame(
+            ['ConventionRouteTest.php', 'HealthEndpointTest.php', 'bootstrap.php'],
+            array_keys(Skeleton::snapshot($root . '/tests')),
+        );
+        foreach (array_keys(Skeleton::snapshot($root)) as $path) {
+            if (in_array(explode('/', $path)[0], ['composer.lock'], true)) {
+                continue;
+            }
+            self::assertStringNotContainsString('tests/Skeleton', (string) file_get_contents($root . '/' . $path), $path);
+        }
+
         self::assertIsObject($composer);
         self::assertIsObject($composer->scripts ?? null);
         self::assertTrue(isset($composer->name, $composer->description), 'o skeleton tem name e description');
@@ -217,7 +247,7 @@ final class PostCreateScriptTest extends TestCase
 
         $after = Skeleton::snapshot($root);
         foreach ($before as $path => $hash) {
-            if (Skeleton::isSkeletonOnly($path) || in_array($path, ['README.md', '.gitattributes', 'composer.json', 'composer.lock'], true)) {
+            if (Skeleton::isSkeletonOnly($path) || in_array($path, ['README.md', '.gitattributes', 'phpunit.xml', 'composer.json', 'composer.lock'], true)) {
                 continue;
             }
             self::assertSame($hash, $after[$path] ?? null, "arquivo da entrega alterado ou removido: {$path}");
@@ -226,11 +256,11 @@ final class PostCreateScriptTest extends TestCase
             self::assertArrayHasKey($path, $before, "arquivo novo criado pelo script: {$path}");
         }
 
-        // 5 caminhos removidos + README + .gitattributes + composer.json + composer.lock + o próprio script + tools/.
+        // 5 caminhos removidos + README + .gitattributes + phpunit.xml + composer.json + composer.lock + o próprio script + tools/.
         // @see docs/manutencao-do-skeleton.md#toolsskeleton-post-createphp (passo 7: uma linha por item)
         // @see docs/manutencao-do-skeleton.md#arquivos-só-do-skeleton (SKELETON_ONLY: 6 caminhos, um é o script)
         $lines = self::outputLines($result['stdout']);
-        self::assertCount(11, $lines, "uma linha por item removido ou alterado:\n" . $result['stdout']);
+        self::assertCount(12, $lines, "uma linha por item removido ou alterado:\n" . $result['stdout']);
         self::assertSame(
             ['alterado: composer.json', 'alterado: composer.lock'],
             array_values(array_filter($lines, static fn(string $l): bool => str_starts_with($l, 'alterado: composer.'))),
@@ -261,12 +291,114 @@ final class PostCreateScriptTest extends TestCase
 
     // ------------------------------------------------------------------ casos de borda em projeto mínimo
 
+    // ------------------------------------------------------------------ phpunit.xml (passo 4)
+
+    private static function phpunitWithBlock(string $eol = "\n"): string
+    {
+        return implode($eol, [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<phpunit bootstrap="tests/bootstrap.php" colors="true">',
+            '    <testsuites>',
+            '        <testsuite name="Projeto">',
+            '            <directory>tests</directory>',
+            '            ' . Skeleton::PHPUNIT_START,
+            '            <exclude>tests/Skeleton</exclude>',
+            '            ' . Skeleton::PHPUNIT_END,
+            '        </testsuite>',
+            '    </testsuites>',
+            '</phpunit>',
+            '',
+        ]);
+    }
+
+    public function testRemovesTheMarkedBlockOfPhpunitXml(): void
+    {
+        $root = $this->fixture(['phpunit.xml' => self::phpunitWithBlock()] + self::defaultFiles());
+
+        $result = $this->runScript($root);
+
+        self::assertSame(0, $result['code'], $result['stderr']);
+        $after = (string) file_get_contents($root . '/phpunit.xml');
+        self::assertStringNotContainsString('skeleton:', $after);
+        self::assertStringNotContainsString('tests/Skeleton', $after);
+        self::assertSame(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<phpunit bootstrap=\"tests/bootstrap.php\" colors=\"true\">\n"
+            . "    <testsuites>\n        <testsuite name=\"Projeto\">\n            <directory>tests</directory>\n"
+            . "        </testsuite>\n    </testsuites>\n</phpunit>\n",
+            $after,
+        );
+    }
+
+    public function testPhpunitXmlKeepsCrlfOutsideTheBlock(): void
+    {
+        $original = self::phpunitWithBlock("\r\n");
+        $root = $this->fixture(['phpunit.xml' => $original] + self::defaultFiles());
+
+        $result = $this->runScript($root);
+
+        self::assertSame(0, $result['code'], $result['stderr']);
+        self::assertSame(
+            Skeleton::withoutMarkedBlock($original, Skeleton::PHPUNIT_START, Skeleton::PHPUNIT_END),
+            (string) file_get_contents($root . '/phpunit.xml'),
+        );
+        self::assertStringNotContainsString('tests/Skeleton', (string) file_get_contents($root . '/phpunit.xml'));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function brokenPhpunitMarkers(): iterable
+    {
+        $start = Skeleton::PHPUNIT_START;
+        $end = Skeleton::PHPUNIT_END;
+        yield 'só inicio' => ["<phpunit>\n{$start}\n<exclude>tests/Skeleton</exclude>\n</phpunit>\n"];
+        yield 'só fim' => ["<phpunit>\n{$end}\n</phpunit>\n"];
+        yield 'fim antes de inicio' => ["<phpunit>\n{$end}\nx\n{$start}\n</phpunit>\n"];
+        yield 'mais de um par' => ["<phpunit>\n{$start}\na\n{$end}\n{$start}\nb\n{$end}\n</phpunit>\n"];
+    }
+
+    #[DataProvider('brokenPhpunitMarkers')]
+    public function testBrokenPhpunitMarkersKeepTheFileWarnAndContinue(string $phpunit): void
+    {
+        $root = $this->fixture(['phpunit.xml' => $phpunit] + self::defaultFiles());
+
+        $result = $this->runScript($root);
+
+        self::assertSame(0, $result['code'], $result['stderr']);
+        self::assertSame($phpunit, (string) file_get_contents($root . '/phpunit.xml'));
+        self::assertStringContainsString('phpunit.xml', $result['stderr']);
+        // o script continua: os passos seguintes rodam
+        self::assertStringNotContainsString('post-create-project-cmd', (string) file_get_contents($root . '/composer.json'));
+        self::assertFileDoesNotExist($root . '/' . Skeleton::SCRIPT);
+    }
+
+    public function testPhpunitXmlWithoutMarkersStaysUntouchedSilently(): void
+    {
+        $plain = "<phpunit>\r\n    <testsuites/>\r\n</phpunit>\r\n";
+        $root = $this->fixture(['phpunit.xml' => $plain] + self::defaultFiles());
+
+        $result = $this->runScript($root);
+
+        self::assertSame(0, $result['code'], $result['stderr']);
+        self::assertSame($plain, (string) file_get_contents($root . '/phpunit.xml'));
+        self::assertStringNotContainsString('phpunit.xml', $result['stderr']);
+    }
+
+    public function testMissingPhpunitXmlIsIgnoredSilently(): void
+    {
+        $root = $this->fixture(self::defaultFiles());
+
+        $result = $this->runScript($root);
+
+        self::assertSame(0, $result['code'], $result['stderr']);
+        self::assertFileDoesNotExist($root . '/phpunit.xml');
+        self::assertStringNotContainsString('phpunit.xml', $result['stderr']);
+    }
+
     public function testAlreadyMissingPathsAreIgnored(): void
     {
         $root = $this->fixture(self::defaultFiles() + [
             'docs/manutencao-do-skeleton.md' => "# Manutenção\n",
-            'tests-skeleton/ExampleTest.php' => "<?php\n",
-            'tests-skeleton/Support/Helper.php' => "<?php\n",
+            'tests/Skeleton/ExampleTest.php' => "<?php\n",
+            'tests/Skeleton/Support/Helper.php' => "<?php\n",
         ]);
 
         $result = $this->runScript($root);
@@ -333,7 +465,7 @@ final class PostCreateScriptTest extends TestCase
 
     public function testBrokenGitattributesMarkersKeepTheFileAndWarn(): void
     {
-        $attributes = "* text=auto eol=lf\n" . Skeleton::ATTRIBUTES_START . "\n/tests-skeleton export-ignore\n";
+        $attributes = "* text=auto eol=lf\n" . Skeleton::ATTRIBUTES_START . "\n/tests/Skeleton export-ignore\n";
         $root = $this->fixture(['.gitattributes' => $attributes] + self::defaultFiles());
 
         $result = $this->runScript($root);

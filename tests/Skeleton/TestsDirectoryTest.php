@@ -36,7 +36,7 @@ final class TestsDirectoryTest extends TestCase
     ];
 
     /**
-     * `tests/` tem exatamente os arquivos da tabela, nada além.
+     * `tests/` tem exatamente os arquivos da tabela, nada além, fora a pasta `tests/Skeleton/`.
      *
      * @see docs/manutencao-do-skeleton.md#o-que-fica-em-tests
      */
@@ -48,9 +48,15 @@ final class TestsDirectoryTest extends TestCase
             new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS),
         );
         foreach ($iterator as $file) {
-            if ($file->isFile()) {
-                $files[] = 'tests/' . str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
+            if (!$file->isFile()) {
+                continue;
             }
+            $relative = 'tests/' . str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
+            // tests/Skeleton/ é só do skeleton e sai na criação do projeto.
+            if (str_starts_with($relative, 'tests/Skeleton/')) {
+                continue;
+            }
+            $files[] = $relative;
         }
         sort($files, SORT_STRING);
         $expected = self::TESTS_FILES;
@@ -84,7 +90,7 @@ final class TestsDirectoryTest extends TestCase
 
     /**
      * Nenhum arquivo entregue cita o teste removido. Ficam de fora `docs/manutencao-do-skeleton.md` e
-     * `tests-skeleton/`, que são só do skeleton.
+     * `tests/Skeleton/`, que são só do skeleton.
      *
      * @param string $name nome da classe (e do arquivo) removida
      *
