@@ -311,7 +311,8 @@ Por isso esta página não guarda os valores que o Dependabot troca (veja
 - **PRs do Dependabot e OIDC.** O pipeline central descobre a própria versão pelo token OIDC (`id-token: write`).
   Se o GitHub não conceder o `id-token` nos PRs do Dependabot, o check falha nesses PRs, com a mensagem pedindo o
   `automation_ref`. Conferir [antes de gerar uma estável](#antes-de-gerar-uma-estável). Se falhar, a correção é no
-  `Elavora/.github`, não no projeto.
+  `Elavora/.github`, não no projeto. Já conferido antes da 2.0.0: os PRs #49, #50 e #51 do Dependabot (troca da
+  versão do `Elavora/.github`) rodaram `quality / Qualidade PHP` com sucesso.
 - **PRs de fork** não recebem `id-token` e falham no início do pipeline central. Aceito: os projetos trabalham com
   branches internas.
 - **Perfis de aplicação e o framework 2.** Os pacotes de extensão ainda não têm versão que aceite
