@@ -88,6 +88,44 @@ O `composer require` só funciona se o pacote tiver uma versão que aceite o `el
 As outras extensões (logs, worker de fila, storage, DataTypes e outras) não têm overlay. Elas estão na
 [lista de pacotes da Elavora no Packagist](https://packagist.org/packages/elavora/).
 
+### Instalar o pacote sem PHP no host
+
+Alguns pacotes exigem uma extensão do PHP que o host e a imagem `composer:2` não têm. O caso mais comum é o
+`elavora/api-cache-apcu`, que exige `ext-apcu`. Nesse caso `composer require elavora/api-cache-apcu` falha na
+verificação de plataforma, com uma mensagem como `requires ext-apcu * -> it is missing from your system`.
+
+Há duas saídas. Escolha uma.
+
+**1. Rodar o Composer na imagem de desenvolvimento.** A `ghcr.io/elavora/php-dev:8.3-latest` tem o APCu e as demais
+extensões. Na pasta do projeto, no PowerShell (Docker Desktop no Windows):
+
+```powershell
+docker run --rm -u root --mount "type=bind,source=$($PWD.Path),target=/workspace" -w /workspace ghcr.io/elavora/php-dev:8.3-latest composer require elavora/api-cache-apcu
+```
+
+No bash (macOS ou WSL com Docker Desktop):
+
+```bash
+docker run --rm -u root -v "$PWD":/workspace -w /workspace ghcr.io/elavora/php-dev:8.3-latest composer require elavora/api-cache-apcu
+```
+
+O `-u` importa porque a imagem roda como o usuário de uid 1000. No Docker Desktop do Windows, a pasta montada não
+pertence a esse usuário, e o Composer para com `composer.json is not writable`. O mesmo vale para o aviso de que não
+consegue gravar o `.phpunit.result.cache`. A solução é `-u root`: no Docker Desktop (Windows e macOS) os arquivos
+continuam sendo seus no host. Em um host Linux, `-u root` deixaria `composer.json`, `composer.lock` e `vendor/` com
+dono root. Lá use o seu próprio usuário: `-u "$(id -u):$(id -g)"`.
+
+**2. Ignorar a verificação da extensão só nesse comando.** Qualquer imagem do Composer serve, porque nada do pacote
+é executado:
+
+```bash
+docker run --rm -u root -v "$PWD":/app -w /app composer:2 require elavora/api-cache-apcu --ignore-platform-req=ext-apcu
+```
+
+(`-u root` pelo mesmo motivo acima.) O `composer.lock` fica correto. A extensão passa a existir de verdade na imagem da
+API quando você sobe com o overlay `core/compose/apcu.yml`, que instala o APCu. Não use `--ignore-platform-reqs`
+(no plural), que desliga a checagem de tudo.
+
 ## Extensões do projeto
 
 Há dois jeitos de uma extensão entrar na aplicação:
