@@ -79,6 +79,18 @@ docker compose -f docker-compose.yml -f core/compose/redis.yml -f core/compose/p
 
 Não combine `apcu.yml` com `redis.yml`. Os dois escolhem o cache, e o projeto usa um só.
 
+Para trocar de um cache pelo outro, não basta trocar o overlay e o `CACHE_DRIVER`. Remova também o pacote antigo:
+
+```bash
+composer remove elavora/api-cache-apcu
+composer require elavora/api-cache-redis
+```
+
+Se o pacote antigo ficar no `composer.json` e no `composer.lock`, o `composer install --no-dev` do `Dockerfile` falha
+no build. O overlay novo não instala a extensão do cache antigo na imagem (por exemplo, o `redis.yml` não instala o
+APCu), e o Composer recusa instalar `elavora/api-cache-apcu` sem `ext-apcu`. O mesmo vale no sentido contrário: ao sair
+do Redis para o APCu, rode `composer remove elavora/api-cache-redis`.
+
 O `composer require` só funciona se o pacote tiver uma versão que aceite o `elavora/api-framework` travado no
 `composer.lock`. Se não tiver, o Composer recusa a instalação e diz o motivo.
 
