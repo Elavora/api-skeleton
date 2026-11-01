@@ -75,6 +75,28 @@ Em automação, `ELAVORA_ENV_FILE` aponta o `env_file` para outro arquivo:
 ELAVORA_ENV_FILE=/tmp/api-smoke.env docker compose --env-file /tmp/api-smoke.env config
 ```
 
+## Pasta `storage`
+
+A pasta `storage/` guarda o que a aplicação gera ao rodar: o arquivo do SQLite, o log em arquivo e os arquivos do
+`elavora/api-storage-local`. Ela existe no projeto criado, com um `.gitkeep`. O `.gitignore` ignora o conteúdo e
+mantém só o `.gitkeep`, então esses dados não vão para o Git. O `.dockerignore` exclui a pasta do `COPY` da imagem, e
+o `Dockerfile` cria `/app/storage` com permissão de escrita para o processo da API.
+
+Use caminhos relativos a ela nas extensões, por exemplo `storage/app.sqlite` ou `LOG_FILE=storage/logs/app.log`.
+O SQLite não cria pastas: se o caminho tiver uma subpasta, crie-a antes.
+
+Os dados ficam dentro do contêiner e somem com `docker compose down`. Para mantê-los, monte um volume em
+`/app/storage` no `docker-compose.yml`:
+
+```yaml
+services:
+  api:
+    volumes:
+      - storage:/app/storage
+volumes:
+  storage:
+```
+
 ## Overlays do Docker Compose
 
 Cada arquivo de `core/compose/` liga um serviço ao `docker-compose.yml`. Ele instala na imagem PHP só a extensão que

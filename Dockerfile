@@ -46,6 +46,8 @@ FROM runtime
 COPY --from=dependencies /app/vendor ./vendor
 COPY . .
 
+RUN mkdir -p storage && chmod 775 storage
+
 EXPOSE 8080
 
 # O ultimo argumento funciona como router script: qualquer path HTTP e
