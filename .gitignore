@@ -6,3 +6,5 @@ coverage/
 vendor/
 /.elavora/
 /.php-cs-fixer.php
+/storage/*
+!/storage/.gitkeep
