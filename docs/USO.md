@@ -46,6 +46,27 @@ e o [Bootstrap compartilhado](https://github.com/Elavora/api-framework/blob/main
 
 Os blocos `environment` dos overlays valem mais que o `.env`.
 
+### Configurar o log logo no começo
+
+Com `APP_DEBUG=false`, uma resposta 500 não traz o motivo do erro, e sem uma extensão de log nada é registrado.
+Quem recebe um 500 sem log não tem como saber a causa. Por isso configure o log antes de escrever o primeiro
+código, junto com a criação do `.env`:
+
+```bash
+composer require elavora/api-log-stdout
+```
+
+No `.env`:
+
+```text
+LOG_DRIVER=stdout
+```
+
+Suba o projeto e leia o log com `docker compose logs -f api`. Se preferir um arquivo, use `elavora/api-log-file` com
+`LOG_DRIVER=file` e `LOG_FILE=storage/logs/app.log` (a pasta `storage/` deve existir e ser gravável). Use um só
+driver de log. Para investigar um erro só em desenvolvimento, `APP_DEBUG=true` mostra o motivo na resposta, mas não o
+deixe ligado em produção.
+
 O `.env` fica no `.gitignore` e no `.dockerignore`, e nunca é copiado para a imagem.
 
 Em automação, `ELAVORA_ENV_FILE` aponta o `env_file` para outro arquivo:
