@@ -832,7 +832,9 @@ O `.gitignore` entregue tem, cada uma numa linha própria, exatamente com este t
 
 - `/.elavora/`: pasta onde o CI baixa os scripts centrais;
 - `/.php-cs-fixer.php`: override pessoal;
-- `.phpunit.result.cache`: cache de resultados do PHPUnit.
+- `.phpunit.result.cache`: cache de resultados do PHPUnit;
+- `/storage/*`: o conteúdo da pasta `storage/` (dados gerados em execução);
+- `!/storage/.gitkeep`: exceção que mantém a pasta no Git.
 
 Como os `phpunit.xml` não definem `cacheDirectory`, o PHPUnit grava o `.phpunit.result.cache` na pasta do
 `phpunit.xml` usado. Isso dá dois lugares: a raiz (`composer test`) e `tests/Skeleton/`
@@ -846,6 +848,45 @@ Depois de rodar os testes, `git status --porcelain` não lista o cache:
 - Falha: um `.gitignore` só com `/.phpunit.result.cache`, porque o caminho de `tests/Skeleton/` não é ignorado;
 - Falha: um `.gitignore` com `/tests/Skeleton/.phpunit.result.cache`, porque cita uma pasta que só existe no
   skeleton.
+
+Para o `storage/`: `git check-ignore -q storage/app.sqlite` e `git check-ignore -q storage/logs/app.log` terminam com
+código 0, e `git check-ignore -q storage/.gitkeep` termina com código 1 (o arquivo não é ignorado). Falha: um
+`.gitignore` com `/storage/` (ignora a pasta inteira, e o `.gitkeep` some do Git).
+
+### `storage/`
+
+O projeto entregue tem a pasta `storage/` com um único arquivo, `storage/.gitkeep`, vazio. Ela é a pasta para dados
+gerados em execução: o arquivo do SQLite (`storage/app.sqlite`), o log em arquivo (`LOG_FILE=storage/logs/app.log`) e
+os arquivos do `elavora/api-storage-local`. Sem ela, a extensão SQLite responde 500 com
+`unable to open database file`, porque o PDO não cria a pasta.
+
+Regras que os testes conferem:
+
+- `storage/.gitkeep` existe e está vazio. Ele está entre os arquivos entregues pelo `composer create-project`.
+- O `.gitignore` ignora o conteúdo de `storage/` e preserva o `.gitkeep` (linhas em
+  [Linhas do `.gitignore`](#linhas-do-gitignore)).
+- O `.dockerignore` continua com a linha `storage`: dados locais não entram na imagem. Como o `.gitkeep` também fica
+  fora do `COPY . .`, a pasta não existe na imagem por causa do `COPY`. O `Dockerfile` a cria.
+- O estágio final do `Dockerfile` tem a instrução `RUN mkdir -p storage && chmod 775 storage` depois do
+  `COPY . .` e antes do `EXPOSE 8080`. O `WORKDIR` é `/app`, então a pasta é `/app/storage`. O processo PHP roda como
+  root (o `Dockerfile` não tem `USER`), então o dono é root e o modo `775` basta. Se o `Dockerfile` ganhar `USER`, a
+  instrução precisa fazer `chown` para esse usuário.
+- Na imagem construída, `docker run --rm <imagem> sh -c 'test -d storage && test -w storage && touch storage/app.sqlite'`
+  termina com código 0.
+- O `docker build` continua terminando com sucesso.
+
+Exemplos:
+
+- passa: `RUN mkdir -p storage && chmod 775 storage` no estágio final, depois do `COPY . .`;
+- falha: o `mkdir` só no estágio `runtime` ou `dependencies` (a pasta não chega à imagem final);
+- falha: tirar `storage` do `.dockerignore` para a pasta entrar na imagem (levaria dados locais junto).
+
+Comportamento atual incorreto, como contraexemplo: num projeto recém-criado, `ls storage` não encontra a pasta, e uma
+`SqliteExtension` com caminho `storage/app.sqlite` devolve 500 `unable to open database file` na primeira requisição.
+Comportamento esperado: a pasta existe no clone e na imagem, e a mesma requisição abre (ou cria) o arquivo.
+
+Os dados em `/app/storage` vivem na camada do contêiner e somem com `docker compose down`. Para guardá-los, o projeto
+monta um volume (veja o [Guia de uso](USO.md#pasta-storage)).
 
 ### `Dockerfile`
 

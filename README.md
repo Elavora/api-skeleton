@@ -50,6 +50,7 @@ core/
 |-- bootstrap/app.php     # Monta Application, registra extensões do projeto e rotas.
 `-- compose/              # Overlays opcionais do Docker Compose.
 public/index.php          # Única entrada exposta pelo servidor HTTP.
+storage/                  # Dados gerados em execução (SQLite, logs, arquivos). Só o .gitkeep é versionado.
 worker.php                # Entrada CLI para consumo de filas.
 tests/                    # Testes da aplicação.
 ```
