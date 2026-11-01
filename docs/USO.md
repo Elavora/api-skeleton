@@ -305,6 +305,23 @@ letra. Todas as regras, e os casos que dão `404`, estão em
 **Por rota explícita.** Para um alias ou uma URL que não segue `/controller/action`, registre a rota em
 `app/Http/HttpRoutes.php`, como o `/health` já faz.
 
+### Controller com dependências
+
+O framework cria o controller sem argumentos. Se o construtor recebe um serviço, registre uma fábrica da classe no
+container, dentro de `HttpRoutes::register`:
+
+```php
+$app->container()->bind(
+    TaskController::class,
+    static fn($container): TaskController => new TaskController(new TaskRepository()),
+);
+```
+
+Sem a fábrica, o controller com construtor obrigatório responde `404` na rota por convenção. O passo a passo, com
+serviço, controller e um exemplo que roda sozinho, está em
+[Injeção de serviços em controllers](https://github.com/Elavora/api-framework/blob/main/docs/INJECAO-EM-CONTROLLERS.md),
+disponível a partir da versão 2.0.2 do `elavora/api-framework`.
+
 ## Tarefas de fila
 
 O arquivo `app/Worker/tasks.php` devolve um `TaskRegistry` vazio. Para cada tarefa, crie um handler em `app/Worker/`
