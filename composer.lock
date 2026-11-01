@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "elavora/api-framework",
-            "version": "2.0.0",
+            "version": "2.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Elavora/api-framework.git",
-                "reference": "8043cb362adbb457c5746e06ff95298b9767f107"
+                "reference": "39cb5684f0d92c580421d07714670ccf969cf310"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Elavora/api-framework/zipball/8043cb362adbb457c5746e06ff95298b9767f107",
-                "reference": "8043cb362adbb457c5746e06ff95298b9767f107",
+                "url": "https://api.github.com/repos/Elavora/api-framework/zipball/39cb5684f0d92c580421d07714670ccf969cf310",
+                "reference": "39cb5684f0d92c580421d07714670ccf969cf310",
                 "shasum": ""
             },
             "require": {
@@ -27,7 +27,7 @@
                 "php": ">=8.3"
             },
             "require-dev": {
-                "elavora/code-standards": "^1.0",
+                "elavora/code-standards": "^1.1",
                 "phpstan/phpstan": "^2.2",
                 "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0"
             },
@@ -49,9 +49,9 @@
             "description": "Nucleo HTTP modular do framework Elavora",
             "support": {
                 "issues": "https://github.com/Elavora/api-framework/issues",
-                "source": "https://github.com/Elavora/api-framework/tree/2.0.0"
+                "source": "https://github.com/Elavora/api-framework/tree/2.0.2"
             },
-            "time": "2026-10-18T20:19:48+00:00"
+            "time": "2026-11-01T19:02:40+00:00"
         }
     ],
     "packages-dev": [
