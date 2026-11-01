@@ -282,6 +282,29 @@ As duas rotas respondem `{"status":"ok"}`. `/health` é um alias registrado em `
 As duas rotas são um exemplo prático e também a checagem de saúde do projeto. O job `Imagem Docker` do CI depende
 delas. Mantenha o `HealthController` e o alias `/health`.
 
+## Rotas e controllers
+
+Há dois jeitos de uma URL chegar a um controller.
+
+**Por convenção.** O primeiro segmento da URL é o nome do controller **sem o sufixo `Controller`**, e o segundo é a
+action. O framework monta `App\Http\Controller\<Nome>Controller` e chama o método, que precisa ser público e ter o
+atributo `#[Action]`. Exemplos:
+
+| URL | Chega em |
+| --- | --- |
+| `/health/show` | `HealthController::show` |
+| `/user/create` | `UserController::create` |
+| `/user` | `UserController::index` (sem action, vale `index`) |
+| `/listaDePedidos/show` | `ListaDePedidosController::show` |
+
+Então um `UserController` com `#[Action] public function create(Request $request): Response` responde em
+`/user/create`, sem registrar nada. O segmento começa com letra minúscula; maiúsculas só valem a partir da segunda
+letra. Todas as regras, e os casos que dão `404`, estão em
+[Segurança do roteamento](https://github.com/Elavora/api-framework/blob/main/docs/ROTEAMENTO.md).
+
+**Por rota explícita.** Para um alias ou uma URL que não segue `/controller/action`, registre a rota em
+`app/Http/HttpRoutes.php`, como o `/health` já faz.
+
 ## Tarefas de fila
 
 O arquivo `app/Worker/tasks.php` devolve um `TaskRegistry` vazio. Para cada tarefa, crie um handler em `app/Worker/`
