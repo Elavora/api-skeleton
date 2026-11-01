@@ -292,6 +292,17 @@ docker build -t minha-api .
 
 `composer check` roda o lint, o PHPStan e o PHPUnit.
 
+O `docker build` instala só as extensões que você pede por `--build-arg`. Se o projeto usa um pacote que exige uma
+extensão, passe o argumento dela, ou o `composer install` do build falha. No caso do `elavora/api-cache-apcu`, o
+erro é `requires ext-apcu * -> it is missing from your system`, e a correção é o `INSTALL_APCU=1`:
+
+```bash
+docker build --build-arg INSTALL_APCU=1 -t minha-api .
+```
+
+Os outros argumentos são `INSTALL_REDIS`, `INSTALL_MYSQL` e `INSTALL_POSTGRESQL`, todos com padrão `0`. O
+`docker compose` com um overlay de `core/compose/` já passa o argumento certo (o `apcu.yml` define `INSTALL_APCU: 1`).
+
 - O `composer lint` roda o `elavora-standards lint`, do pacote `elavora/code-standards`. O que ele confere está em
   [lint.md](https://github.com/Elavora/code-standards/blob/main/docs/lint.md).
 - O PHPStan roda no nível 8, sem baseline. O `worker.php` e o `app/Worker/` ficam fora da análise enquanto o
