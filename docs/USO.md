@@ -164,6 +164,15 @@ No bash (macOS ou WSL com Docker Desktop):
 docker run --rm -u root -v "$PWD":/workspace -w /workspace ghcr.io/elavora/php-dev:8.3-latest composer require elavora/api-cache-apcu
 ```
 
+**Git Bash no Windows.** Os exemplos em bash não funcionam no Git Bash: ele converte o `$PWD` (`/c/Users/...`) e o
+`-w /workspace` em caminhos do próprio Git (como `.../Git/workspace`), e o Docker monta a pasta errada ou recusa o
+diretório de trabalho. Desligue a conversão com `MSYS_NO_PATHCONV=1` e passe o caminho do Windows, que o `pwd -W`
+devolve:
+
+```bash
+MSYS_NO_PATHCONV=1 docker run --rm -u root -v "$(pwd -W):/workspace" -w /workspace ghcr.io/elavora/php-dev:8.3-latest composer require elavora/api-cache-apcu
+```
+
 O `-u` importa porque a imagem roda como o usuário de uid 1000. No Docker Desktop do Windows, a pasta montada não
 pertence a esse usuário, e o Composer para com `composer.json is not writable`. O mesmo vale para o aviso de que não
 consegue gravar o `.phpunit.result.cache`. A solução é `-u root`: no Docker Desktop (Windows e macOS) os arquivos
@@ -172,6 +181,14 @@ dono root. Lá use o seu próprio usuário: `-u "$(id -u):$(id -g)"`.
 
 **2. Ignorar a verificação da extensão só nesse comando.** Qualquer imagem do Composer serve, porque nada do pacote
 é executado:
+
+No PowerShell:
+
+```powershell
+docker run --rm -u root --mount "type=bind,source=$($PWD.Path),target=/app" -w /app composer:2 require elavora/api-cache-apcu --ignore-platform-req=ext-apcu
+```
+
+No bash:
 
 ```bash
 docker run --rm -u root -v "$PWD":/app -w /app composer:2 require elavora/api-cache-apcu --ignore-platform-req=ext-apcu
@@ -265,6 +282,46 @@ As duas rotas respondem `{"status":"ok"}`. `/health` é um alias registrado em `
 As duas rotas são um exemplo prático e também a checagem de saúde do projeto. O job `Imagem Docker` do CI depende
 delas. Mantenha o `HealthController` e o alias `/health`.
 
+## Rotas e controllers
+
+Há dois jeitos de uma URL chegar a um controller.
+
+**Por convenção.** O primeiro segmento da URL é o nome do controller **sem o sufixo `Controller`**, e o segundo é a
+action. O framework monta `App\Http\Controller\<Nome>Controller` e chama o método, que precisa ser público e ter o
+atributo `#[Action]`. Exemplos:
+
+| URL | Chega em |
+| --- | --- |
+| `/health/show` | `HealthController::show` |
+| `/user/create` | `UserController::create` |
+| `/user` | `UserController::index` (sem action, vale `index`) |
+| `/listaDePedidos/show` | `ListaDePedidosController::show` |
+
+Então um `UserController` com `#[Action] public function create(Request $request): Response` responde em
+`/user/create`, sem registrar nada. O segmento começa com letra minúscula; maiúsculas só valem a partir da segunda
+letra. Todas as regras, e os casos que dão `404`, estão em
+[Segurança do roteamento](https://github.com/Elavora/api-framework/blob/main/docs/ROTEAMENTO.md).
+
+**Por rota explícita.** Para um alias ou uma URL que não segue `/controller/action`, registre a rota em
+`app/Http/HttpRoutes.php`, como o `/health` já faz.
+
+### Controller com dependências
+
+O framework cria o controller sem argumentos. Se o construtor recebe um serviço, registre uma fábrica da classe no
+container, dentro de `HttpRoutes::register`:
+
+```php
+$app->container()->bind(
+    TaskController::class,
+    static fn($container): TaskController => new TaskController(new TaskRepository()),
+);
+```
+
+Sem a fábrica, o controller com construtor obrigatório responde `404` na rota por convenção. O passo a passo, com
+serviço, controller e um exemplo que roda sozinho, está em
+[Injeção de serviços em controllers](https://github.com/Elavora/api-framework/blob/main/docs/INJECAO-EM-CONTROLLERS.md),
+disponível a partir da versão 2.0.2 do `elavora/api-framework`.
+
 ## Tarefas de fila
 
 O arquivo `app/Worker/tasks.php` devolve um `TaskRegistry` vazio. Para cada tarefa, crie um handler em `app/Worker/`
@@ -291,6 +348,17 @@ docker build -t minha-api .
 ```
 
 `composer check` roda o lint, o PHPStan e o PHPUnit.
+
+O `docker build` instala só as extensões que você pede por `--build-arg`. Se o projeto usa um pacote que exige uma
+extensão, passe o argumento dela, ou o `composer install` do build falha. No caso do `elavora/api-cache-apcu`, o
+erro é `requires ext-apcu * -> it is missing from your system`, e a correção é o `INSTALL_APCU=1`:
+
+```bash
+docker build --build-arg INSTALL_APCU=1 -t minha-api .
+```
+
+Os outros argumentos são `INSTALL_REDIS`, `INSTALL_MYSQL` e `INSTALL_POSTGRESQL`, todos com padrão `0`. O
+`docker compose` com um overlay de `core/compose/` já passa o argumento certo (o `apcu.yml` define `INSTALL_APCU: 1`).
 
 - O `composer lint` roda o `elavora-standards lint`, do pacote `elavora/code-standards`. O que ele confere está em
   [lint.md](https://github.com/Elavora/code-standards/blob/main/docs/lint.md).
