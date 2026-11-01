@@ -36,6 +36,9 @@ O `.env.example` traz exemplos dessas variáveis, em grupos. O comentário no co
 ele é, e o comentário acima de cada variável diz o que ela faz. Só `APP_DEBUG` e `APP_PORT` vêm ativas. As outras vêm
 comentadas: descomente as do pacote que instalar.
 
+Nem toda extensão tem variável de ambiente. SQLite e storage local, por exemplo, não têm: elas entram pelo
+`core/bootstrap/app.php` (veja [Extensões sem variável de ambiente](#extensões-sem-variável-de-ambiente)).
+
 A lista do `.env.example` foi copiada na criação do projeto e não se atualiza sozinha. A referência das variáveis é o
 framework: o
 [`EnvironmentExtensions.php`](https://github.com/Elavora/api-framework/blob/main/src/Bootstrap/EnvironmentExtensions.php)
@@ -105,6 +108,50 @@ return ApplicationBootstrap::create(
     configure: HttpRoutes::register(...),
 );
 ```
+
+### Extensões sem variável de ambiente
+
+Nem toda extensão é escolhida pelo `.env`. O `.env.example` só cobre cache, Redis, fila, banco (MySQL e PostgreSQL) e
+log. Pacotes como `elavora/api-database-sqlite` e `elavora/api-storage-local` não têm variável de ambiente: instalar o
+pacote não basta, e a extensão **não** é registrada sozinha. Registre-a na lista `extensions:` do
+`core/bootstrap/app.php`.
+
+SQLite, com o arquivo em `storage/app.sqlite` (a pasta `storage/` deve existir no projeto):
+
+```php
+use Elavora\Api\Extension\DatabaseSqlite\SqliteExtension;
+
+return ApplicationBootstrap::create(
+    basePath: dirname(__DIR__, 2),
+    extensions: [
+        new SqliteExtension(['path' => dirname(__DIR__, 2) . '/storage/app.sqlite']),
+    ],
+    configure: HttpRoutes::register(...),
+);
+```
+
+Storage local, com os arquivos em `storage/files`:
+
+```php
+use Elavora\Api\Extension\StorageLocal\LocalStorageExtension;
+
+return ApplicationBootstrap::create(
+    basePath: dirname(__DIR__, 2),
+    extensions: [
+        new LocalStorageExtension(dirname(__DIR__, 2) . '/storage/files'),
+    ],
+    configure: HttpRoutes::register(...),
+);
+```
+
+Use caminhos absolutos montados com `dirname(__DIR__, 2)` (a raiz do projeto, o mesmo `basePath` do bootstrap). Um
+caminho relativo vale a partir da pasta em que o PHP foi iniciado e muda de um ambiente para outro. O `SqliteExtension`
+recebe um array de configuração (`path` para arquivo, `memory => true` para banco em memória, ou um mapa
+`connections`), e o `LocalStorageExtension` recebe o diretório raiz. Os detalhes de cada pacote estão no README dele.
+
+Para saber se um pacote é escolhido pelo `.env`, procure o nome dele no
+[`EnvironmentExtensions.php`](https://github.com/Elavora/api-framework/blob/main/src/Bootstrap/EnvironmentExtensions.php).
+Se não aparece lá, registre-o em `extensions:`.
 
 Não coloque na lista uma extensão que o `.env` já seleciona: ela seria registrada duas vezes. A ordem em que o
 framework registra as extensões está no
