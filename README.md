@@ -27,6 +27,11 @@ A resposta é:
 {"status":"ok"}
 ```
 
+Com `APP_DEBUG=false` (o padrão do `.env.example`), um erro 500 responde sem o motivo, e sem log configurado não
+sobra rastro em lugar nenhum. Configure o log já no começo, antes do primeiro erro: instale
+`elavora/api-log-stdout`, defina `LOG_DRIVER=stdout` no `.env` e leia com `docker compose logs api`. Os passos estão
+em [Configurar o log](docs/USO.md#configurar-o-log-logo-no-começo).
+
 O `.env` é opcional. O que ele faz e como ligar Redis, MySQL, PostgreSQL ou APCu no Compose está no
 [Guia de uso](docs/USO.md).
 
