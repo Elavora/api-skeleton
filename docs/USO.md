@@ -164,6 +164,15 @@ No bash (macOS ou WSL com Docker Desktop):
 docker run --rm -u root -v "$PWD":/workspace -w /workspace ghcr.io/elavora/php-dev:8.3-latest composer require elavora/api-cache-apcu
 ```
 
+**Git Bash no Windows.** Os exemplos em bash não funcionam no Git Bash: ele converte o `$PWD` (`/c/Users/...`) e o
+`-w /workspace` em caminhos do próprio Git (como `.../Git/workspace`), e o Docker monta a pasta errada ou recusa o
+diretório de trabalho. Desligue a conversão com `MSYS_NO_PATHCONV=1` e passe o caminho do Windows, que o `pwd -W`
+devolve:
+
+```bash
+MSYS_NO_PATHCONV=1 docker run --rm -u root -v "$(pwd -W):/workspace" -w /workspace ghcr.io/elavora/php-dev:8.3-latest composer require elavora/api-cache-apcu
+```
+
 O `-u` importa porque a imagem roda como o usuário de uid 1000. No Docker Desktop do Windows, a pasta montada não
 pertence a esse usuário, e o Composer para com `composer.json is not writable`. O mesmo vale para o aviso de que não
 consegue gravar o `.phpunit.result.cache`. A solução é `-u root`: no Docker Desktop (Windows e macOS) os arquivos
@@ -172,6 +181,14 @@ dono root. Lá use o seu próprio usuário: `-u "$(id -u):$(id -g)"`.
 
 **2. Ignorar a verificação da extensão só nesse comando.** Qualquer imagem do Composer serve, porque nada do pacote
 é executado:
+
+No PowerShell:
+
+```powershell
+docker run --rm -u root --mount "type=bind,source=$($PWD.Path),target=/app" -w /app composer:2 require elavora/api-cache-apcu --ignore-platform-req=ext-apcu
+```
+
+No bash:
 
 ```bash
 docker run --rm -u root -v "$PWD":/app -w /app composer:2 require elavora/api-cache-apcu --ignore-platform-req=ext-apcu
