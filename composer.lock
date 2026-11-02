@@ -57,23 +57,31 @@
     "packages-dev": [
         {
             "name": "elavora/code-standards",
-            "version": "1.1.0",
+            "version": "1.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Elavora/code-standards.git",
-                "reference": "6984bb1838423c159589ef818d0511fbd8e2f738"
+                "reference": "199e7ee9597d1f1d450b38400e74e1c7a1911bfc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Elavora/code-standards/zipball/6984bb1838423c159589ef818d0511fbd8e2f738",
-                "reference": "6984bb1838423c159589ef818d0511fbd8e2f738",
+                "url": "https://api.github.com/repos/Elavora/code-standards/zipball/199e7ee9597d1f1d450b38400e74e1c7a1911bfc",
+                "reference": "199e7ee9597d1f1d450b38400e74e1c7a1911bfc",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.3"
             },
+            "conflict": {
+                "phpstan/phpstan": "<2.2",
+                "phpstan/phpstan-strict-rules": "<2.0",
+                "spaze/phpstan-disallowed-calls": "<4.0"
+            },
             "require-dev": {
-                "phpunit/phpunit": "^12.0"
+                "phpstan/phpstan": "^2.2",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^12.0",
+                "spaze/phpstan-disallowed-calls": "^4.0"
             },
             "bin": [
                 "bin/elavora-standards"
@@ -88,8 +96,9 @@
             "license": [
                 "MIT"
             ],
-            "description": "Regras de formatação e estilo da Elavora: PHP-CS-Fixer (PER-CS), EditorConfig e lint de sintaxe PHP",
+            "description": "Regras de formatação e estilo da Elavora: PHP-CS-Fixer (PER-CS), EditorConfig, lint de sintaxe PHP e base do PHPStan",
             "keywords": [
+                "PHPStan",
                 "coding-standard",
                 "editorconfig",
                 "lint",
@@ -98,9 +107,9 @@
             ],
             "support": {
                 "issues": "https://github.com/Elavora/code-standards/issues",
-                "source": "https://github.com/Elavora/code-standards/tree/1.1.0"
+                "source": "https://github.com/Elavora/code-standards/tree/1.2.0"
             },
-            "time": "2026-10-18T20:18:18+00:00"
+            "time": "2026-10-30T02:26:13+00:00"
         },
         {
             "name": "myclabs/deep-copy",
