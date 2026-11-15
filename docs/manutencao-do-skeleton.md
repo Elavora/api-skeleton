@@ -281,7 +281,7 @@ Por isso os testes conferem o **formato** das referências que o Dependabot atua
 | --- | --- | --- |
 | SHA e comentário do `Elavora/.github` nos workflows | a linha `uses` tem o caminho certo, `@`, um SHA de 40 caracteres hexadecimais minúsculos, um espaço, `# ` e uma versão `X.Y.Z` | qual SHA e qual versão |
 | SHA e comentário das actions de terceiros | a linha `uses` tem `@`, um SHA de 40 caracteres hexadecimais minúsculos e um comentário `# v` seguido de uma versão (`v7`, `v7.0`, `v7.0.1`) | qual SHA e qual versão |
-| Restrição de versão no `composer.json` | o major: `elavora/api-framework` começa com `^2.`; `elavora/code-standards` começa com `^1.` seguido de um minor 1 ou maior (`^1.1`, `^1.2`, `^1.10`) | o resto da restrição (`^2.0` e `^2.1` passam) |
+| Restrição de versão no `composer.json` | o major: `elavora/api-framework` começa com `^3.`; `elavora/code-standards` começa com `^1.` seguido de um minor 1 ou maior (`^1.1`, `^1.2`, `^1.10`) | o resto da restrição (`^3.0` e `^3.1` passam) |
 | Versões instaladas no `composer.lock` | nada | o conteúdo do lock |
 | Bloco do `.editorconfig` (quando a versão nova do pacote muda o bloco) | os marcadores e a estrutura (veja [Regras de estilo](#regras-de-estilo)) | se o bloco é igual ao que a versão travada gera |
 
@@ -349,7 +349,7 @@ Em qualquer arquivo entregue, a única referência válida à imagem de desenvol
 
 ### `composer.json`
 
-- `require.elavora/api-framework`: restrição que começa com `^2.` (hoje `^2.0`), sem `dev-`. O framework vem do
+- `require.elavora/api-framework`: restrição que começa com `^3.` (hoje `^3.0`), sem `dev-`. O framework vem do
   Packagist: não há chave `repositories`.
 - `require-dev.elavora/code-standards`: restrição que começa com `^1.` e minor 1 ou maior (hoje `^1.1`). O
   subcomando `lint` só existe a partir da 1.1.0, e o CI roda o lint com as dependências nas versões mínimas. Com

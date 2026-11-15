@@ -8,7 +8,7 @@ envia atualizações depois. O comportamento da API (bootstrap, extensões, rota
 ## Requisitos
 
 - PHP `>=8.3`
-- `elavora/api-framework` `^2.0`
+- `elavora/api-framework` `^3.0`
 - Docker Compose 2.24 ou mais recente, para o `env_file.required`
 
 ## Criação
