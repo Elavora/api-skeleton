@@ -22,7 +22,7 @@ final class ComposerJsonTest extends TestCase
         return $data;
     }
 
-    public function testFrameworkComesFromPackagistWithMajorTwo(): void
+    public function testFrameworkComesFromPackagistWithMajorThree(): void
     {
         $composer = self::composer();
 
@@ -30,8 +30,8 @@ final class ComposerJsonTest extends TestCase
         $constraint = $composer['require']['elavora/api-framework'];
         self::assertIsString($constraint);
         self::assertTrue(
-            Skeleton::hasMajor($constraint, 2),
-            "elavora/api-framework deve começar com ^2. e não usar dev- (recebido: {$constraint})",
+            Skeleton::hasMajor($constraint, 3),
+            "elavora/api-framework deve começar com ^3. e não usar dev- (recebido: {$constraint})",
         );
         self::assertArrayNotHasKey('repositories', $composer, 'O framework vem do Packagist: sem repositório VCS.');
     }
