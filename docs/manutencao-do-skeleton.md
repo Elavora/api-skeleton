@@ -23,7 +23,7 @@ Essa última regra orienta tudo aqui. Um erro copiado para um projeto só sai de
    - **por PR do Dependabot**, com a referência fixa: pacote Composer (`elavora/api-framework`,
      `elavora/code-standards`) travado no lock, ou workflow reutilizável do `Elavora/.github` fixado por SHA com o
      comentário de versão;
-   - **por tag que acompanha as estáveis**, sem PR: a imagem `ghcr.io/elavora/php-dev` na tag `8.3-latest`, usada
+   - **por tag que acompanha as estáveis**, sem PR: a imagem `ghcr.io/elavora/php-dev` na tag `8.4-latest`, usada
      pelo Dev Container e, por padrão, pelo pipeline central;
 3. nenhuma referência copiada (pacote, workflow, action ou imagem) aponta para `main`, para uma branch ou para uma
    tag beta. Links da documentação entregue para a doc de outro repositório são a exceção: eles apontam para a
@@ -143,7 +143,7 @@ Não há job de perfis de aplicação. Veja [Matriz de perfis fora do CI](#matri
 Para rodar os testes da entrega localmente, na raiz do repositório, no PowerShell:
 
 ```powershell
-docker run --rm --mount "type=bind,source=$($PWD.Path),target=/workspace" -w /workspace ghcr.io/elavora/php-dev:8.3-latest sh -lc 'git config --global --add safe.directory /workspace && composer install --no-interaction --prefer-dist && vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --exclude-group docker'
+docker run --rm --mount "type=bind,source=$($PWD.Path),target=/workspace" -w /workspace ghcr.io/elavora/php-dev:8.4-latest sh -lc 'git config --global --add safe.directory /workspace && composer install --no-interaction --prefer-dist && vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --exclude-group docker'
 ```
 
 Os testes de `tests/` são da aplicação e vão para o projeto criado. Eles conferem o código de `app/`. Teste que fala
@@ -281,7 +281,7 @@ Por isso os testes conferem o **formato** das referências que o Dependabot atua
 | --- | --- | --- |
 | SHA e comentário do `Elavora/.github` nos workflows | a linha `uses` tem o caminho certo, `@`, um SHA de 40 caracteres hexadecimais minúsculos, um espaço, `# ` e uma versão `X.Y.Z` | qual SHA e qual versão |
 | SHA e comentário das actions de terceiros | a linha `uses` tem `@`, um SHA de 40 caracteres hexadecimais minúsculos e um comentário `# v` seguido de uma versão (`v7`, `v7.0`, `v7.0.1`) | qual SHA e qual versão |
-| Restrição de versão no `composer.json` | o major: `elavora/api-framework` começa com `^3.`; `elavora/code-standards` começa com `^1.` seguido de um minor 1 ou maior (`^1.1`, `^1.2`, `^1.10`) | o resto da restrição (`^3.0` e `^3.1` passam) |
+| Restrição de versão no `composer.json` | o major: `elavora/api-framework` começa com `^4.`; `elavora/code-standards` começa com `^1.` seguido de um minor 1 ou maior (`^1.1`, `^1.2`, `^1.10`) | o resto da restrição (`^4.1` e `^3.1` passam) |
 | Versões instaladas no `composer.lock` | nada | o conteúdo do lock |
 | Bloco do `.editorconfig` (quando a versão nova do pacote muda o bloco) | os marcadores e a estrutura (veja [Regras de estilo](#regras-de-estilo)) | se o bloco é igual ao que a versão travada gera |
 
@@ -299,7 +299,7 @@ Exemplos que precisam falhar:
 - `uses: Elavora/.github/.github/workflows/php-quality.yml@0123456789abcdef0123456789abcdef01234567` (sem o comentário
   de versão);
 - `uses: Elavora/.github/.github/workflows/php-quality.yml@0123456` (SHA curto);
-- `"elavora/api-framework": "^3.0"` (outro major);
+- `"elavora/api-framework": "^4.1"` (outro major);
 - `"elavora/code-standards": "^1.0"` (minor abaixo de 1: a 1.0.0 não tem o `lint`);
 - `"elavora/code-standards": "^2.1"` (outro major).
 
@@ -332,24 +332,24 @@ atual é o do arquivo.
 
 | Referência | Valor | Onde está |
 | --- | --- | --- |
-| Imagem de desenvolvimento | `ghcr.io/elavora/php-dev:8.3-latest` | `.devcontainer/devcontainer.json` e job `entrega` do `skeleton-tests.yml` |
+| Imagem de desenvolvimento | `ghcr.io/elavora/php-dev:8.4-latest` | `.devcontainer/devcontainer.json` e job `entrega` do `skeleton-tests.yml` |
 | Imagem do CI de qualidade | nenhuma: vale o padrão do `php-quality.yml` central | `quality.yml`, sem `image` |
 | `Elavora/.github` | SHA de 40 caracteres com o comentário `# X.Y.Z` | `uses` do `quality.yml`, `skeleton-release.yml` e `skeleton-sync-labels.yml` |
 | `elavora/code-standards` | restrição `^1.` com minor 1 ou maior, em `require-dev` | `composer.json` e `composer.lock` |
 | `elavora/api-framework` | restrição `^2.`, em `require` | `composer.json` e `composer.lock` |
-| PHP | `8.3` | `php:8.3-cli-alpine` no `Dockerfile`, `8.3-latest` na imagem de desenvolvimento, `>=8.3` em `require.php` |
+| PHP | `8.4` | `php:8.4-cli-alpine` no `Dockerfile`, `8.4-latest` na imagem de desenvolvimento, `>=8.4` em `require.php` |
 
 Em qualquer arquivo entregue, a única referência válida à imagem de desenvolvimento é exatamente
-`ghcr.io/elavora/php-dev:8.3-latest`. São inválidos:
+`ghcr.io/elavora/php-dev:8.4-latest`. São inválidos:
 
-- o nome local `elavora/php-dev:8.3`, a tag `ghcr.io/elavora/php-dev:8.3` e `:latest` sem a versão do PHP;
-- qualquer tag fixa da imagem (`8.3-0.1.0`, `8.3-0.2.0`, `8.3-0.3.0`, ou com `v`, como `8.3-v0.3.0`). Ela
+- o nome local `elavora/php-dev:8.4`, a tag `ghcr.io/elavora/php-dev:8.4` e `:latest` sem a versão do PHP;
+- qualquer tag fixa da imagem (`8.4-0.1.0`, `8.4-0.2.0`, `8.4-0.3.0`, ou com `v`, como `8.4-v0.3.0`). Ela
   congelaria a imagem no projeto, que nunca receberia as estáveis seguintes;
 - qualquer referência ao `Elavora/.github` por nome de branch ou de tag, em vez de SHA.
 
 ### `composer.json`
 
-- `require.elavora/api-framework`: restrição que começa com `^3.` (hoje `^3.0`), sem `dev-`. O framework vem do
+- `require.elavora/api-framework`: restrição que começa com `^4.` (hoje `^4.1`), sem `dev-`. O framework vem do
   Packagist: não há chave `repositories`.
 - `require-dev.elavora/code-standards`: restrição que começa com `^1.` e minor 1 ou maior (hoje `^1.1`). O
   subcomando `lint` só existe a partir da 1.1.0, e o CI roda o lint com as dependências nas versões mínimas. Com
@@ -621,10 +621,10 @@ Nenhum dos três contém o texto `nenhuma extensão tem versão que aceite`. Era
 projeto quando as extensões aceitassem o framework 2.
 
 Sobre a imagem de desenvolvimento, a doc entregue pode citar `ghcr.io/elavora/php-dev` sem tag e
-`ghcr.io/elavora/php-dev:8.3-latest`. Nenhuma outra tag, nem outra versão com `-latest`: a doc não tem mais o passo a
+`ghcr.io/elavora/php-dev:8.4-latest`. Nenhuma outra tag, nem outra versão com `-latest`: a doc não tem mais o passo a
 passo de troca da versão do PHP, que citava `8.4-latest`.
 
-- Passa: `ghcr.io/elavora/php-dev` e `ghcr.io/elavora/php-dev:8.3-latest` no `docs/ambiente-e-ci.md`.
+- Passa: `ghcr.io/elavora/php-dev` e `ghcr.io/elavora/php-dev:8.4-latest` no `docs/ambiente-e-ci.md`.
 - Falha: `ghcr.io/elavora/php-dev:8.4-latest` em qualquer um dos três.
 
 ### `.env.example`
@@ -939,7 +939,7 @@ Segue o `examples/devcontainer.json` do `Elavora/devcontainers`:
 
 | Campo | Valor |
 | --- | --- |
-| `name` | `Elavora API Skeleton - PHP 8.3` |
+| `name` | `Elavora API Skeleton - PHP 8.4` |
 | `image` | o valor da tabela [Versões e referências](#versões-e-referências) |
 | `remoteUser` | `vscode` |
 | `forwardPorts` | `[8080]` |
@@ -981,7 +981,7 @@ jobs:
 ```
 
 - O job `quality` não tem `with` nem `secrets`.
-- Sem `image`: a imagem do CI é o padrão do pipeline central, `8.3-latest`, que acompanha as estáveis. Passar
+- Sem `image`: a imagem do CI é o padrão do pipeline central, `8.4-latest`, que acompanha as estáveis. Passar
   `image` com uma tag fixa congelaria a imagem no projeto.
 - Sem `automation_ref`: o pipeline central descobre a própria versão pelo OIDC, e o SHA aparece uma única vez, no
   `uses`. Assim o Dependabot troca o SHA e o comentário de versão na mesma linha. Com `automation_ref`, o
@@ -1015,7 +1015,7 @@ O `quality.yml` **não** pode conter nenhum destes textos:
 - Dois itens em `updates`, nesta ordem: `package-ecosystem: "composer"` e `package-ecosystem: "github-actions"`,
   ambos com `directory: "/"`.
 - Não há item `docker` nem `devcontainers`. A versão do PHP e a dos serviços são decisão do projeto, trocadas em
-  todos os lugares juntos. A imagem de desenvolvimento se atualiza pela tag `8.3-latest`.
+  todos os lugares juntos. A imagem de desenvolvimento se atualiza pela tag `8.4-latest`.
 - Em cada item: agenda semanal (`interval: "weekly"`, `day: "monday"`, `time: "09:00"`,
   `timezone: "America/Sao_Paulo"`), `open-pull-requests-limit: 5` e `labels: ["dependencies"]`. A lista `labels`
   tem só `dependencies`.
@@ -1141,7 +1141,7 @@ Algoritmo do `content-hash` (o mesmo do `Locker::getContentHash` do Composer 2):
 4. O hash é `md5(json_encode($dados))`, sem flags no `json_encode`.
 
 O resultado tem que bater com o do Composer: depois do script, `composer validate --strict --no-check-publish`
-passa no projeto criado. Conferido na imagem `ghcr.io/elavora/php-dev:8.3-latest` (Composer 2.10.3): sem o `name`,
+passa no projeto criado. Conferido na imagem `ghcr.io/elavora/php-dev:8.4-latest` (Composer 2.10.3): sem o `name`,
 o hash calculado assim é igual ao que `composer update --lock` grava, e o `validate` volta a passar.
 
 Erros:
@@ -1206,7 +1206,7 @@ como atualiza o do `quality.yml`.
 (`branches: [main]`) e `workflow_dispatch`; `permissions: contents: read`. Tem exatamente três jobs, sem
 matriz (veja [Matriz de perfis fora do CI](#matriz-de-perfis-fora-do-ci)):
 
-- `entrega`: roda na imagem `ghcr.io/elavora/php-dev:8.3-latest`, como root, porque o workspace do runner pertence a
+- `entrega`: roda na imagem `ghcr.io/elavora/php-dev:8.4-latest`, como root, porque o workspace do runner pertence a
   outro UID (`COMPOSER_ALLOW_SUPERUSER: '1'`). Roda `composer install --no-interaction --no-progress --prefer-dist` e
   `vendor/bin/phpunit -c tests/Skeleton/phpunit.xml --exclude-group docker`. A imagem não tem Docker;
 - `build-producao`: roda direto no `ubuntu-latest`, que já tem Docker, PHP e Composer. Roda
@@ -1220,7 +1220,7 @@ Todas as checagens de referências seguem
 [Atualizações do Dependabot não quebram os testes](#atualizações-do-dependabot-não-quebram-os-testes).
 
 - Cada item da [Referência da entrega](#referência-da-entrega):
-  - imagem `ghcr.io/elavora/php-dev:8.3-latest` igual no `devcontainer.json` e no job `entrega` do
+  - imagem `ghcr.io/elavora/php-dev:8.4-latest` igual no `devcontainer.json` e no job `entrega` do
     `skeleton-tests.yml`;
   - campos do `devcontainer.json`;
   - chamador e job `imagem` do `quality.yml`, e os textos proibidos;
@@ -1276,7 +1276,7 @@ Todas as checagens de referências seguem
 
   Também os casos de marcadores incompletos e de caminhos já ausentes.
 - A documentação entregue (`README.md` fora do bloco do skeleton, `docs/USO.md` e `docs/ambiente-e-ci.md`) não cita
-  `8.3-0.`, nenhuma sequência de 40 caracteres hexadecimais nem `manutencao-do-skeleton.md`.
+  `8.4-0.`, nenhuma sequência de 40 caracteres hexadecimais nem `manutencao-do-skeleton.md`.
 - A [Documentação entregue](#documentação-entregue): as [seções do `README.md`](#seções-do-readmemd), os
   [links para a doc do framework](#links-para-a-doc-do-framework) e
   [o que a doc entregue não diz](#o-que-a-doc-entregue-não-diz).

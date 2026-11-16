@@ -1,6 +1,6 @@
 FROM composer:2 AS composer
 
-FROM php:8.3-cli-alpine AS runtime
+FROM php:8.4-cli-alpine AS runtime
 
 # Cada overlay em core/compose habilita somente as extensoes exigidas pelo
 # projeto. A imagem base permanece pequena quando nenhum modulo opcional e usado.

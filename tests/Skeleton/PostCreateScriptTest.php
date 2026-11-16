@@ -498,7 +498,7 @@ final class PostCreateScriptTest extends TestCase
                 "name": "acme/api",
                 "description": "Projeto com acentuação e barra/normal",
                 "homepage": "https://exemplo.test/acentuação/barra/normal",
-                "require": {"php": ">=8.3"},
+                "require": {"php": ">=8.4"},
                 "scripts": {
                     "lint": "@php tools/lint.php",
                     "post-create-project-cmd": ["@php tools/skeleton-post-create.php"],
@@ -605,7 +605,7 @@ final class PostCreateScriptTest extends TestCase
 
     public function testComposerJsonWithoutSkeletonKeysStaysByteForByte(): void
     {
-        $composer = "{\n  \"license\": \"MIT\",\n  \"require\": {\"php\": \">=8.3\"}\n}";
+        $composer = "{\n  \"license\": \"MIT\",\n  \"require\": {\"php\": \">=8.4\"}\n}";
         $lock = self::lockWithHash(str_repeat('0', 32));
         $root = $this->fixture(['composer.json' => $composer, 'composer.lock' => $lock] + self::defaultFiles());
 
@@ -623,8 +623,8 @@ final class PostCreateScriptTest extends TestCase
         $composer = json_encode([
             'name' => 'acme/api',
             'description' => 'Skeleton',
-            'require' => ['php' => '>=8.3'],
-            'config' => ['platform' => ['php' => '8.3.0'], 'sort-packages' => true],
+            'require' => ['php' => '>=8.4'],
+            'config' => ['platform' => ['php' => '8.4.0'], 'sort-packages' => true],
             'scripts' => ['post-create-project-cmd' => ['@php tools/skeleton-post-create.php']],
         ], self::JSON_FLAGS) . "\n";
         $oldHash = self::contentHash($composer);
@@ -651,7 +651,7 @@ final class PostCreateScriptTest extends TestCase
         // description não entra no content-hash: o composer.json muda, o hash não.
         $composer = json_encode([
             'description' => 'Skeleton',
-            'require' => ['php' => '>=8.3'],
+            'require' => ['php' => '>=8.4'],
             'scripts' => ['post-create-project-cmd' => ['@php tools/skeleton-post-create.php']],
         ], self::JSON_FLAGS) . "\n";
         $lock = self::lockWithHash(self::contentHash($composer));

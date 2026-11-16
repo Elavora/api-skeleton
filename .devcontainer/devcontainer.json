@@ -1,6 +1,6 @@
 {
-  "name": "Elavora API Skeleton - PHP 8.3",
-  "image": "ghcr.io/elavora/php-dev:8.3-latest",
+  "name": "Elavora API Skeleton - PHP 8.4",
+  "image": "ghcr.io/elavora/php-dev:8.4-latest",
   "remoteUser": "vscode",
   "forwardPorts": [
     8080

@@ -4,27 +4,27 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fcdb495644caf759959e4f28c8025501",
+    "content-hash": "05cc892f76fb5317ae4d97d1cf129c01",
     "packages": [
         {
             "name": "elavora/api-framework",
-            "version": "3.0.0",
+            "version": "4.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Elavora/api-framework.git",
-                "reference": "1edda4dc1869215d6b58795cef3156b8673583a6"
+                "reference": "e5090ea7ace0686904c219294eb4abef31e5b5f2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Elavora/api-framework/zipball/1edda4dc1869215d6b58795cef3156b8673583a6",
-                "reference": "1edda4dc1869215d6b58795cef3156b8673583a6",
+                "url": "https://api.github.com/repos/Elavora/api-framework/zipball/e5090ea7ace0686904c219294eb4abef31e5b5f2",
+                "reference": "e5090ea7ace0686904c219294eb4abef31e5b5f2",
                 "shasum": ""
             },
             "require": {
                 "ext-ctype": "*",
                 "ext-filter": "*",
                 "ext-json": "*",
-                "php": ">=8.3"
+                "php": ">=8.4"
             },
             "require-dev": {
                 "elavora/code-standards": "^1.1",
@@ -34,7 +34,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "2.0-dev"
+                    "dev-main": "4.0-dev"
                 }
             },
             "autoload": {
@@ -49,9 +49,10 @@
             "description": "Nucleo HTTP modular do framework Elavora",
             "support": {
                 "issues": "https://github.com/Elavora/api-framework/issues",
-                "source": "https://github.com/Elavora/api-framework/tree/3.0.0"
+                "source": "https://github.com/Elavora/api-framework/tree/4.1.0"
             },
-            "time": "2026-11-15T19:56:24+00:00"
+            "time": "2026-11-16T02:05:56+00:00",
+            "published-time": "2026-11-16T02:06:12+00:00"
         }
     ],
     "packages-dev": [
@@ -1899,8 +1900,8 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=8.3"
+        "php": ">=8.4"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.11.0"
 }

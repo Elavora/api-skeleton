@@ -15,7 +15,7 @@ use SkeletonTests\Support\Skeleton;
 final class DeliveredReferencesTest extends TestCase
 {
     /**
-     * A única referência válida à imagem é `ghcr.io/elavora/php-dev:8.3-latest`. A documentação pode citar também
+     * A única referência válida à imagem é `ghcr.io/elavora/php-dev:8.4-latest`. A documentação pode citar também
      * a imagem sem tag. Nenhuma outra versão com `-latest` é aceita, nem na documentação: ela não tem mais o passo a
      * passo de troca da versão do PHP.
      *
@@ -50,7 +50,7 @@ final class DeliveredReferencesTest extends TestCase
     }
 
     /**
-     * A documentação entregue não cita `8.3-0.`, SHA de 40 hex nem `manutencao-do-skeleton.md`.
+     * A documentação entregue não cita `8.4-0.`, SHA de 40 hex nem `manutencao-do-skeleton.md`.
      * O guia de migração foi apagado, então a citação a ele não é mais conferida.
      *
      * @see docs/manutencao-do-skeleton.md#o-que-testsskeleton-verifica
@@ -64,7 +64,7 @@ final class DeliveredReferencesTest extends TestCase
             $content = Skeleton::withoutMarkedBlock($content, Skeleton::README_START, Skeleton::README_END);
         }
 
-        self::assertStringNotContainsString('8.3-0.', $content);
+        self::assertStringNotContainsString('8.4-0.', $content);
         self::assertDoesNotMatchRegularExpression('~(?<![0-9a-fA-F])[0-9a-fA-F]{40}(?![0-9a-fA-F])~', $content);
         self::assertStringNotContainsString('manutencao-do-skeleton.md', $content);
     }

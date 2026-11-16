@@ -25,7 +25,7 @@ jobs:
     timeout-minutes: 15
     # Como root: o workspace do runner pertence a outro UID.
     container:
-      image: ghcr.io/elavora/php-dev:8.3-latest
+      image: ghcr.io/elavora/php-dev:8.4-latest
       options: --user root
     env:
       COMPOSER_ALLOW_SUPERUSER: '1'

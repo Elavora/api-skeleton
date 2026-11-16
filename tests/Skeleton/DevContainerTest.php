@@ -24,7 +24,7 @@ final class DevContainerTest extends TestCase
     {
         $config = self::config();
 
-        self::assertSame('Elavora API Skeleton - PHP 8.3', $config['name'] ?? null);
+        self::assertSame('Elavora API Skeleton - PHP 8.4', $config['name'] ?? null);
         self::assertSame(Skeleton::DEV_IMAGE, $config['image'] ?? null);
         self::assertSame('vscode', $config['remoteUser'] ?? null);
         self::assertSame([8080], $config['forwardPorts'] ?? null);

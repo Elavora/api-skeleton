@@ -16,7 +16,7 @@ use RuntimeException;
  */
 final class Skeleton
 {
-    public const DEV_IMAGE = 'ghcr.io/elavora/php-dev:8.3-latest';
+    public const DEV_IMAGE = 'ghcr.io/elavora/php-dev:8.4-latest';
 
     /**
      * Tabela "Arquivos só do skeleton", na ordem da documentação.
@@ -81,7 +81,7 @@ final class Skeleton
         return preg_match('~^[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+@[0-9a-f]{40} # v\d+(?:\.\d+){0,2}$~', trim($ref)) === 1;
     }
 
-    /** Restrição do Composer com o major esperado (`^2.0` e `^2.1` passam; `^3.0` e `dev-*` falham). */
+    /** Restrição do Composer com o major esperado (`^4.0` e `^4.1` passam; `^3.0` e `dev-*` falham). */
     public static function hasMajor(string $constraint, int $major): bool
     {
         return str_starts_with($constraint, '^' . $major . '.') && !str_contains($constraint, 'dev-');
