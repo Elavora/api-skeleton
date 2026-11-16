@@ -151,17 +151,17 @@ verificação de plataforma, com uma mensagem como `requires ext-apcu * -> it is
 
 Há duas saídas. Escolha uma.
 
-**1. Rodar o Composer na imagem de desenvolvimento.** A `ghcr.io/elavora/php-dev:8.3-latest` tem o APCu e as demais
+**1. Rodar o Composer na imagem de desenvolvimento.** A `ghcr.io/elavora/php-dev:8.4-latest` tem o APCu e as demais
 extensões. Na pasta do projeto, no PowerShell (Docker Desktop no Windows):
 
 ```powershell
-docker run --rm -u root --mount "type=bind,source=$($PWD.Path),target=/workspace" -w /workspace ghcr.io/elavora/php-dev:8.3-latest composer require elavora/api-cache-apcu
+docker run --rm -u root --mount "type=bind,source=$($PWD.Path),target=/workspace" -w /workspace ghcr.io/elavora/php-dev:8.4-latest composer require elavora/api-cache-apcu
 ```
 
 No bash (macOS ou WSL com Docker Desktop):
 
 ```bash
-docker run --rm -u root -v "$PWD":/workspace -w /workspace ghcr.io/elavora/php-dev:8.3-latest composer require elavora/api-cache-apcu
+docker run --rm -u root -v "$PWD":/workspace -w /workspace ghcr.io/elavora/php-dev:8.4-latest composer require elavora/api-cache-apcu
 ```
 
 **Git Bash no Windows.** Os exemplos em bash não funcionam no Git Bash: ele converte o `$PWD` (`/c/Users/...`) e o
@@ -170,7 +170,7 @@ diretório de trabalho. Desligue a conversão com `MSYS_NO_PATHCONV=1` e passe o
 devolve:
 
 ```bash
-MSYS_NO_PATHCONV=1 docker run --rm -u root -v "$(pwd -W):/workspace" -w /workspace ghcr.io/elavora/php-dev:8.3-latest composer require elavora/api-cache-apcu
+MSYS_NO_PATHCONV=1 docker run --rm -u root -v "$(pwd -W):/workspace" -w /workspace ghcr.io/elavora/php-dev:8.4-latest composer require elavora/api-cache-apcu
 ```
 
 O `-u` importa porque a imagem roda como o usuário de uid 1000. No Docker Desktop do Windows, a pasta montada não

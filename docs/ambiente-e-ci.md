@@ -8,14 +8,14 @@ Um projeto criado com `composer create-project elavora/api-skeleton` já vem com
 
 | Peça | Arquivos no projeto | O que faz |
 | --- | --- | --- |
-| Dev Container | `.devcontainer/devcontainer.json` | Abre o projeto na imagem `ghcr.io/elavora/php-dev`, com PHP 8.3, PHP-CS-Fixer, editorconfig-checker e formatação ao salvar |
+| Dev Container | `.devcontainer/devcontainer.json` | Abre o projeto na imagem `ghcr.io/elavora/php-dev`, com PHP 8.4, PHP-CS-Fixer, editorconfig-checker e formatação ao salvar |
 | Qualidade | `.github/workflows/quality.yml` | No PR: formata (e commita a correção), confere o `.editorconfig`, roda lint, PHPStan, `composer audit` e testes, e comenta o resultado. Também sobe a imagem Docker e confere `/health` |
 | Regras de estilo | `elavora/code-standards` no `require-dev`, `.php-cs-fixer.dist.php` e `.editorconfig` | Padrão PER-CS e regras de editor da Elavora |
 | Dependabot | `.github/dependabot.yml` | Uma vez por semana, propõe atualizações do Composer e das GitHub Actions |
 
 Esses arquivos passam a ser do seu projeto. Mude-os quando o projeto precisar.
 
-O Dev Container e o CI usam a mesma imagem, `ghcr.io/elavora/php-dev` na tag `8.3-latest`, e as mesmas regras de
+O Dev Container e o CI usam a mesma imagem, `ghcr.io/elavora/php-dev` na tag `8.4-latest`, e as mesmas regras de
 estilo, as do `elavora/code-standards` travado no `composer.lock`.
 
 ## Usar o Dev Container
@@ -53,7 +53,7 @@ Detalhes da imagem estão em [Elavora/devcontainers](https://github.com/Elavora/
 Na pasta do projeto, no PowerShell, com a mesma imagem do `.devcontainer/devcontainer.json`:
 
 ```powershell
-docker run --rm --pull always --mount "type=bind,source=$($PWD.Path),target=/workspace" -w /workspace ghcr.io/elavora/php-dev:8.3-latest sh -lc 'git config --global --add safe.directory /workspace && composer install --no-interaction --prefer-dist && composer check'
+docker run --rm --pull always --mount "type=bind,source=$($PWD.Path),target=/workspace" -w /workspace ghcr.io/elavora/php-dev:8.4-latest sh -lc 'git config --global --add safe.directory /workspace && composer install --no-interaction --prefer-dist && composer check'
 ```
 
 ## O que acontece num pull request

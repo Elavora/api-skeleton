@@ -69,12 +69,12 @@ final class ReferenceFormatTest extends TestCase
     /** @return iterable<string, array{string, int, bool}> */
     public static function constraints(): iterable
     {
-        yield 'framework ^2.0' => ['^2.0', 2, true];
-        yield 'framework ^2.1 (Dependabot)' => ['^2.1', 2, true];
-        yield 'framework ^2.0.3' => ['^2.0.3', 2, true];
-        yield 'framework ^3.0 (outro major)' => ['^3.0', 2, false];
-        yield 'framework dev-main' => ['dev-main as 1.0.x-dev', 2, false];
-        yield 'framework ^1.0' => ['^1.0', 2, false];
+        yield 'framework ^4.0' => ['^4.0', 4, true];
+        yield 'framework ^4.1 (Dependabot)' => ['^4.1', 4, true];
+        yield 'framework ^4.0.3' => ['^4.0.3', 4, true];
+        yield 'framework ^3.0 (outro major)' => ['^3.0', 4, false];
+        yield 'framework dev-main' => ['dev-main as 1.0.x-dev', 4, false];
+        yield 'framework ^1.0' => ['^1.0', 4, false];
     }
 
     /** @return iterable<string, array{string, bool}> */
@@ -105,13 +105,13 @@ final class ReferenceFormatTest extends TestCase
     /** @return iterable<string, array{string, bool}> */
     public static function images(): iterable
     {
-        yield 'tag que acompanha as estáveis' => ['ghcr.io/elavora/php-dev:8.3-latest', true];
-        yield 'nome local' => ['elavora/php-dev:8.3', false];
-        yield 'tag sem -latest' => ['ghcr.io/elavora/php-dev:8.3', false];
+        yield 'tag que acompanha as estáveis' => ['ghcr.io/elavora/php-dev:8.4-latest', true];
+        yield 'nome local' => ['elavora/php-dev:8.4', false];
+        yield 'tag sem -latest' => ['ghcr.io/elavora/php-dev:8.4', false];
         yield ':latest sem versão do PHP' => ['ghcr.io/elavora/php-dev:latest', false];
-        yield 'tag fixa 8.3-0.1.0' => ['ghcr.io/elavora/php-dev:8.3-0.1.0', false];
-        yield 'tag fixa 8.3-0.3.0' => ['ghcr.io/elavora/php-dev:8.3-0.3.0', false];
-        yield 'tag fixa com v' => ['ghcr.io/elavora/php-dev:8.3-v0.3.0', false];
+        yield 'tag fixa 8.4-0.1.0' => ['ghcr.io/elavora/php-dev:8.4-0.1.0', false];
+        yield 'tag fixa 8.4-0.3.0' => ['ghcr.io/elavora/php-dev:8.4-0.3.0', false];
+        yield 'tag fixa com v' => ['ghcr.io/elavora/php-dev:8.4-v0.3.0', false];
     }
 
     #[DataProvider('images')]

@@ -97,7 +97,7 @@ final class DockerfileTest extends TestCase
             "FROM runtime AS dependencies\nRUN apk add --no-cache --virtual .composer-install-deps git\n",
             false,
         ];
-        yield 'apk add git em outro estágio' => ["FROM php:8.3-cli-alpine AS runtime\nRUN apk add --no-cache git\n", false];
+        yield 'apk add git em outro estágio' => ["FROM php:8.4-cli-alpine AS runtime\nRUN apk add --no-cache git\n", false];
         yield 'Git com maiúscula' => ["# Instala o Git\nFROM runtime AS dependencies\n", false];
         yield 'GIT em caixa alta' => ["ENV GIT_TERMINAL_PROMPT=0\n", false];
         yield 'só o apk del' => ["RUN composer install && apk del .composer-install-deps\n", false];
