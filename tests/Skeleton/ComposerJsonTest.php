@@ -46,7 +46,7 @@ final class ComposerJsonTest extends TestCase
         }
     }
 
-    public function testCodeStandardsIsADevelopmentDependencyWithMajorOne(): void
+    public function testCodeStandardsIsADevelopmentDependencyWithMajorTwo(): void
     {
         $composer = self::composer();
 
@@ -54,8 +54,8 @@ final class ComposerJsonTest extends TestCase
         self::assertArrayNotHasKey('elavora/code-standards', $composer['require'] ?? []);
         $constraint = (string) $composer['require-dev']['elavora/code-standards'];
         self::assertTrue(
-            Skeleton::hasMajorWithMinorAtLeast($constraint, 1, 1),
-            "elavora/code-standards deve começar com ^1. e minor 1 ou maior, que tem o lint (recebido: {$constraint})",
+            Skeleton::hasMajorWithMinorAtLeast($constraint, 2, 0),
+            "elavora/code-standards deve começar com ^2. (recebido: {$constraint})",
         );
     }
 

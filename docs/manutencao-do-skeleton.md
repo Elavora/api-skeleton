@@ -281,7 +281,7 @@ Por isso os testes conferem o **formato** das referências que o Dependabot atua
 | --- | --- | --- |
 | SHA e comentário do `Elavora/.github` nos workflows | a linha `uses` tem o caminho certo, `@`, um SHA de 40 caracteres hexadecimais minúsculos, um espaço, `# ` e uma versão `X.Y.Z` | qual SHA e qual versão |
 | SHA e comentário das actions de terceiros | a linha `uses` tem `@`, um SHA de 40 caracteres hexadecimais minúsculos e um comentário `# v` seguido de uma versão (`v7`, `v7.0`, `v7.0.1`) | qual SHA e qual versão |
-| Restrição de versão no `composer.json` | o major: `elavora/api-framework` começa com `^4.`; `elavora/code-standards` começa com `^1.` seguido de um minor 1 ou maior (`^1.1`, `^1.2`, `^1.10`) | o resto da restrição (`^4.1` e `^3.1` passam) |
+| Restrição de versão no `composer.json` | o major: `elavora/api-framework` começa com `^4.`; `elavora/code-standards` começa com `^2.`, com minor 0 ou maior (`^2.0`, `^2.1`, `^2.10`) | o resto da restrição (`^4.1` e `^3.1` passam) |
 | Versões instaladas no `composer.lock` | nada | o conteúdo do lock |
 | Bloco do `.editorconfig` (quando a versão nova do pacote muda o bloco) | os marcadores e a estrutura (veja [Regras de estilo](#regras-de-estilo)) | se o bloco é igual ao que a versão travada gera |
 
@@ -291,7 +291,7 @@ Exemplos que precisam passar:
   por outro SHA com `# 1.4.0`;
 - `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7` trocado por outro SHA com `# v7.1.0`;
 - `"elavora/api-framework": "^2.0"` trocado por `"^2.1"`;
-- `"elavora/code-standards": "^1.1"` trocado por `"^1.2"`.
+- `"elavora/code-standards": "^2.0"` trocado por `"^2.1"`.
 
 Exemplos que precisam falhar:
 
@@ -300,7 +300,7 @@ Exemplos que precisam falhar:
   de versão);
 - `uses: Elavora/.github/.github/workflows/php-quality.yml@0123456` (SHA curto);
 - `"elavora/api-framework": "^4.1"` (outro major);
-- `"elavora/code-standards": "^1.0"` (minor abaixo de 1: a 1.0.0 não tem o `lint`);
+- `"elavora/code-standards": "^1.1"` (outro major: a 1.x ainda aceita PHP 8.3);
 - `"elavora/code-standards": "^2.1"` (outro major).
 
 Por isso esta página não guarda os valores que o Dependabot troca (veja
@@ -335,7 +335,7 @@ atual é o do arquivo.
 | Imagem de desenvolvimento | `ghcr.io/elavora/php-dev:8.4-latest` | `.devcontainer/devcontainer.json` e job `entrega` do `skeleton-tests.yml` |
 | Imagem do CI de qualidade | nenhuma: vale o padrão do `php-quality.yml` central | `quality.yml`, sem `image` |
 | `Elavora/.github` | SHA de 40 caracteres com o comentário `# X.Y.Z` | `uses` do `quality.yml`, `skeleton-release.yml` e `skeleton-sync-labels.yml` |
-| `elavora/code-standards` | restrição `^1.` com minor 1 ou maior, em `require-dev` | `composer.json` e `composer.lock` |
+| `elavora/code-standards` | restrição `^2.` com minor 0 ou maior, em `require-dev` | `composer.json` e `composer.lock` |
 | `elavora/api-framework` | restrição `^2.`, em `require` | `composer.json` e `composer.lock` |
 | PHP | `8.4` | `php:8.4-cli-alpine` no `Dockerfile`, `8.4-latest` na imagem de desenvolvimento, `>=8.4` em `require.php` |
 
@@ -351,7 +351,7 @@ Em qualquer arquivo entregue, a única referência válida à imagem de desenvol
 
 - `require.elavora/api-framework`: restrição que começa com `^4.` (hoje `^4.1`), sem `dev-`. O framework vem do
   Packagist: não há chave `repositories`.
-- `require-dev.elavora/code-standards`: restrição que começa com `^1.` e minor 1 ou maior (hoje `^1.1`). O
+- `require-dev.elavora/code-standards`: restrição que começa com `^2.` e minor 0 ou maior (hoje `^2.0`). O
   subcomando `lint` só existe a partir da 1.1.0, e o CI roda o lint com as dependências nas versões mínimas. Com
   `^1.0`, o CI instalaria a 1.0.0 e o `composer lint` falharia. O `friendsofphp/php-cs-fixer` **não** entra: o
   binário vem da imagem.
@@ -1248,7 +1248,7 @@ Todas as checagens de referências seguem
     [conteúdo exato](#lista-de-extensões-do-projeto-no-appphp), sem o `core/config/extensions.php` e sem citação a
     `config/extensions.php` nos arquivos entregues.
 - O `composer.json`: `elavora/api-framework` com restrição que começa com `^2.`, sem `dev-` nem chave
-  `repositories`; `elavora/code-standards` em `require-dev`, com restrição que começa com `^1.` e minor 1 ou
+  `repositories`; `elavora/code-standards` em `require-dev`, com restrição que começa com `^2.` e minor 0 ou
   maior; o script `lint` igual a `elavora-standards lint`; a ausência de `tools/lint.php`; os callbacks
   `Elavora\CodeStandards\Composer::sync`; e o `post-create-project-cmd`.
 - **O build de produção continua funcionando** com o `elavora/code-standards` fora da instalação `--no-dev`:

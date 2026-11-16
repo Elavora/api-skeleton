@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6416a228796795a7f4d1308b6e154220",
+    "content-hash": "b5f29949c719456195ceba6c77fa220c",
     "packages": [
         {
             "name": "elavora/api-framework",
@@ -57,20 +57,20 @@
     "packages-dev": [
         {
             "name": "elavora/code-standards",
-            "version": "1.2.0",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Elavora/code-standards.git",
-                "reference": "199e7ee9597d1f1d450b38400e74e1c7a1911bfc"
+                "reference": "ee2168f6c4817a971c61703c1c7d809cdb6bc24b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Elavora/code-standards/zipball/199e7ee9597d1f1d450b38400e74e1c7a1911bfc",
-                "reference": "199e7ee9597d1f1d450b38400e74e1c7a1911bfc",
+                "url": "https://api.github.com/repos/Elavora/code-standards/zipball/ee2168f6c4817a971c61703c1c7d809cdb6bc24b",
+                "reference": "ee2168f6c4817a971c61703c1c7d809cdb6bc24b",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.3"
+                "php": ">=8.4"
             },
             "conflict": {
                 "phpstan/phpstan": "<2.2",
@@ -107,9 +107,10 @@
             ],
             "support": {
                 "issues": "https://github.com/Elavora/code-standards/issues",
-                "source": "https://github.com/Elavora/code-standards/tree/1.2.0"
+                "source": "https://github.com/Elavora/code-standards/tree/2.0.0"
             },
-            "time": "2026-10-30T02:26:13+00:00"
+            "time": "2026-11-16T03:22:57+00:00",
+            "published-time": "2026-11-16T03:23:18+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -2052,5 +2053,5 @@
         "php": ">=8.4"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.11.0"
 }
