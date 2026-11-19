@@ -8,8 +8,11 @@ envia atualizações depois. O comportamento da API (bootstrap, extensões, rota
 ## Requisitos
 
 - PHP `>=8.4`
-- `elavora/api-framework` `^4.1`
+- `elavora/api-framework` `^6.0`
 - Docker Compose 2.24 ou mais recente, para o `env_file.required`
+
+O framework 6 não tem mais a regra `int-string` (use `int`, que aceita texto numérico em parâmetros de query) nem as
+regras de formato por nome (`email`, `url`, `base64`, `json`, `uuid`): use a classe do DataType correspondente.
 
 ## Criação
 
