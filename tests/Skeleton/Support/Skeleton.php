@@ -81,7 +81,7 @@ final class Skeleton
         return preg_match('~^[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+@[0-9a-f]{40} # v\d+(?:\.\d+){0,2}$~', trim($ref)) === 1;
     }
 
-    /** Restrição do Composer com o major esperado (`^4.0` e `^4.1` passam; `^3.0` e `dev-*` falham). */
+    /** Restrição do Composer com o major esperado (`^6.0` e `^6.1` passam; `^3.0` e `dev-*` falham). */
     public static function hasMajor(string $constraint, int $major): bool
     {
         return str_starts_with($constraint, '^' . $major . '.') && !str_contains($constraint, 'dev-');

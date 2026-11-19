@@ -69,12 +69,13 @@ final class ReferenceFormatTest extends TestCase
     /** @return iterable<string, array{string, int, bool}> */
     public static function constraints(): iterable
     {
-        yield 'framework ^4.0' => ['^4.0', 4, true];
-        yield 'framework ^4.1 (Dependabot)' => ['^4.1', 4, true];
-        yield 'framework ^4.0.3' => ['^4.0.3', 4, true];
-        yield 'framework ^3.0 (outro major)' => ['^3.0', 4, false];
-        yield 'framework dev-main' => ['dev-main as 1.0.x-dev', 4, false];
-        yield 'framework ^1.0' => ['^1.0', 4, false];
+        yield 'framework ^6.0' => ['^6.0', 6, true];
+        yield 'framework ^6.1 (Dependabot)' => ['^6.1', 6, true];
+        yield 'framework ^6.0.3' => ['^6.0.3', 6, true];
+        yield 'framework ^4.1 (outro major)' => ['^4.1', 6, false];
+        yield 'framework ^3.0 (outro major)' => ['^3.0', 6, false];
+        yield 'framework dev-main' => ['dev-main as 1.0.x-dev', 6, false];
+        yield 'framework ^1.0' => ['^1.0', 6, false];
     }
 
     /** @return iterable<string, array{string, bool}> */

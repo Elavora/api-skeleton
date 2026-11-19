@@ -281,7 +281,7 @@ Por isso os testes conferem o **formato** das referências que o Dependabot atua
 | --- | --- | --- |
 | SHA e comentário do `Elavora/.github` nos workflows | a linha `uses` tem o caminho certo, `@`, um SHA de 40 caracteres hexadecimais minúsculos, um espaço, `# ` e uma versão `X.Y.Z` | qual SHA e qual versão |
 | SHA e comentário das actions de terceiros | a linha `uses` tem `@`, um SHA de 40 caracteres hexadecimais minúsculos e um comentário `# v` seguido de uma versão (`v7`, `v7.0`, `v7.0.1`) | qual SHA e qual versão |
-| Restrição de versão no `composer.json` | o major: `elavora/api-framework` começa com `^4.`; `elavora/code-standards` começa com `^2.`, com minor 0 ou maior (`^2.0`, `^2.1`, `^2.10`) | o resto da restrição (`^4.1` e `^3.1` passam) |
+| Restrição de versão no `composer.json` | o major: `elavora/api-framework` começa com `^6.`; `elavora/code-standards` começa com `^2.`, com minor 0 ou maior (`^2.0`, `^2.1`, `^2.10`) | o resto da restrição (`^6.1` e `^3.1` passam) |
 | Versões instaladas no `composer.lock` | nada | o conteúdo do lock |
 | Bloco do `.editorconfig` (quando a versão nova do pacote muda o bloco) | os marcadores e a estrutura (veja [Regras de estilo](#regras-de-estilo)) | se o bloco é igual ao que a versão travada gera |
 
@@ -299,7 +299,7 @@ Exemplos que precisam falhar:
 - `uses: Elavora/.github/.github/workflows/php-quality.yml@0123456789abcdef0123456789abcdef01234567` (sem o comentário
   de versão);
 - `uses: Elavora/.github/.github/workflows/php-quality.yml@0123456` (SHA curto);
-- `"elavora/api-framework": "^4.1"` (outro major);
+- `"elavora/api-framework": "^4.1"` (outro major: a 6.x é a atual);
 - `"elavora/code-standards": "^1.1"` (outro major: a 1.x ainda aceita PHP 8.3);
 - `"elavora/code-standards": "^2.1"` (outro major).
 
@@ -349,7 +349,7 @@ Em qualquer arquivo entregue, a única referência válida à imagem de desenvol
 
 ### `composer.json`
 
-- `require.elavora/api-framework`: restrição que começa com `^4.` (hoje `^4.1`), sem `dev-`. O framework vem do
+- `require.elavora/api-framework`: restrição que começa com `^6.` (hoje `^4.1`), sem `dev-`. O framework vem do
   Packagist: não há chave `repositories`.
 - `require-dev.elavora/code-standards`: restrição que começa com `^2.` e minor 0 ou maior (hoje `^2.0`). O
   subcomando `lint` só existe a partir da 1.1.0, e o CI roda o lint com as dependências nas versões mínimas. Com
